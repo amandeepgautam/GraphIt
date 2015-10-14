@@ -1,0 +1,19 @@
+<resources>
+    <string name="app_name">GraphIt</string>
+
+    <string name="hello_world">Hello world!</string>
+    <string name="action_settings">Settings</string>
+    <string name="title_activity_bluetooth_scanner">BluetoothScanner</string>
+    <string name="title_activity_pair_device_selection">PairDeviceSelection</string>
+    <string name="paired_device_selection_scan_more">Scan new devices</string>
+    <string name="title_activity_base">BaseActivity</string>
+    <string name="title_activity_check_box_in_list_view">CheckBoxInListViewActivity</string>
+    <string name="title_activity_test">TestActivity</string>
+    <string name="title_activity_file_browser">FileBrowserActivity</string>
+
+    <!-- State for bluetooth pairing-->
+    <string name="paired">Paired</string>
+    <string name="unpaired">Unpaired</string>
+    <string name="pairing">Pairing</string>
+    <string name="title_activity_file_download_info">FileDownloadInfoActivity</string>
+</resources>

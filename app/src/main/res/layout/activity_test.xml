@@ -1,0 +1,27 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="edu.unm.twin_cities.graphit.activity.TestActivity">
+    <Button
+        android:id="@+id/test_bluetooth_scanner_activity_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Bluetooth Scanner Activity"
+        android:onClick="startBluethoothScannerActivity" />
+
+    <Button
+        android:id="@+id/test_paired_device_selection_activity_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/test_bluetooth_scanner_activity_button"
+        android:text="Paired Device Selection Activity"
+        android:onClick="startPairedDeviceSelectionActivity" />
+
+    <Button
+        android:id="@+id/test_plot_activity_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/test_paired_device_selection_activity_button"
+        android:text="Plot Activity"
+        android:onClick="startPlotActivity" />
+</RelativeLayout>
