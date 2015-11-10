@@ -99,7 +99,7 @@ public class FileBrowserActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_file_browser);
 
-/*        Toolbar toolbar = (Toolbar) findViewById(R.id.image_view_toolbar);
+        Toolbar toolbar = (Toolbar) findViewById(R.id.image_view_toolbar);
         setSupportActionBar(toolbar);
 
         toolbar.setOnClickListener(new View.OnClickListener() {
@@ -107,7 +107,7 @@ public class FileBrowserActivity extends AppCompatActivity {
             public void onClick(View v) {
                 Log.d(TAG, "Clicked");
             }
-        });*/
+        });
 
         BluetoothDevice bluetoothDevice = (BluetoothDevice) getIntent().getExtras().get(BluetoothScanner.PARAM_BLUETOOTH_DEVICE);
         try {
