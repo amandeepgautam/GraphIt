@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.ListActivity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -67,5 +68,14 @@ public class PairedDeviceSelection extends CheckBoxInListViewActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    /**
+     * Start the bluetooth scanner activity.
+     * @param view
+     */
+    public void startBluethoothScannerActivity(View view) {
+        Intent intent = new Intent(this, BluetoothScanner.class);
+        startActivity(intent);
     }
 }

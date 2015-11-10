@@ -5,4 +5,12 @@
     android:layout_width="match_parent"
     android:minHeight="?attr/actionBarSize"
     android:background="?attr/colorPrimary">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:id="@+id/image_view_toolbar_title" />
+
+
 </android.support.v7.widget.Toolbar>

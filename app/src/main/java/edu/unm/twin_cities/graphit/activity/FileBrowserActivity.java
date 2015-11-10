@@ -38,10 +38,13 @@ import java.io.Serializable;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.Deque;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 import edu.umn.twin_cities.ErrorCode;
 import edu.umn.twin_cities.FileAdapter;
@@ -94,6 +97,8 @@ public class FileBrowserActivity extends AppCompatActivity {
                     }
             );
 
+    Deque<String> parentStack = new ArrayDeque<String>();
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -101,11 +106,22 @@ public class FileBrowserActivity extends AppCompatActivity {
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.image_view_toolbar);
         setSupportActionBar(toolbar);
+        getSupportActionBar().setDisplayShowTitleEnabled(false);    //remove the application name from toolbar.
+        final TextView toolBarTitle = (TextView) toolbar.findViewById(R.id.image_view_toolbar_title);
 
         toolbar.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Log.d(TAG, "Clicked");
+                if (parentStack.size() > 1) {
+                    try {
+                        parentStack.pop();
+                        List<FileAdapter> files = browserCache.get(parentStack.peek());
+                        fileArrayAdapter.clear();
+                        fileArrayAdapter.addAll(files);
+                    } catch (ExecutionException ee) {
+                        Log.e(TAG, "Exception while accessing cache.", ee);
+                    }
+                }
             }
         });
 
@@ -128,9 +144,12 @@ public class FileBrowserActivity extends AppCompatActivity {
                     try {
                         FileAdapter file = (FileAdapter) parent.getItemAtPosition(position);
                         if (file.getResourceType() == ResourceType.DIRECTORY) {
-                            List<FileAdapter> files = browserCache.get(file.getPath());
+                            String path = file.getPath();
+                            List<FileAdapter> files = browserCache.get(path);
+                            parentStack.push(path);
                             fileArrayAdapter.clear();
                             fileArrayAdapter.addAll(files);
+                            toolBarTitle.setText(path);
                         } else if (file.getResourceType() == ResourceType.FILE) {
                             byte [] fileContents = transferFile(file.getPath());
                             if (fileContents.length != 0) {
@@ -156,6 +175,8 @@ public class FileBrowserActivity extends AppCompatActivity {
                             //TODO: DO error handling. Send some notifications etc.
                             Log.e(TAG, "CANNOT READ FILE");
                         }
+                    } catch (ExecutionException ee) {
+                        Log.e(TAG, "Exception while accessing cache.", ee);
                     } catch (Exception e) { //java.io.IOException
                         //TODO: DO error handling.
                         Log.e(TAG, "We go an exception", e);
@@ -164,8 +185,11 @@ public class FileBrowserActivity extends AppCompatActivity {
             });
 
             //Send a empty path. Server should return the default accessible location.
-            String path = "/home/pi/Adafruit-Raspberry-Pi-Python-Code/Adafruit_ADS1x15/testing";
-            List<FileAdapter> files = listFiles(path);
+            String path = "/";
+            List<FileAdapter> files = browserCache.get(path);
+            parentStack.push(path);
+            toolBarTitle.setText(path);
+
             fileArrayAdapter.addAll(files);
         } catch (Exception e) {
             Log.e(TAG, "We go an exception", e);
@@ -266,6 +290,14 @@ public class FileBrowserActivity extends AppCompatActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        MenuItem item= menu.findItem(R.id.action_settings);
+        item.setVisible(false);
+        super.onPrepareOptionsMenu(menu);
+        return true;
     }
 
     @Data
