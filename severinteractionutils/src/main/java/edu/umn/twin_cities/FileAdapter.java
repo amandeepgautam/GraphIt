@@ -30,7 +30,7 @@ public class FileAdapter implements Serializable {
     private long lastModified;
 
     /**
-     * If the resource is a file
+     * Type of resource.
      */
     private ResourceType resourceType;
 
@@ -45,7 +45,7 @@ public class FileAdapter implements Serializable {
         FILE,
         /**
          * Captures the fact that File.canRead() returns false.
-         * This will be promary due to permission conflicts.
+         * This will be primarily due to permission conflicts.
          */
         UNKNOWN;
     }

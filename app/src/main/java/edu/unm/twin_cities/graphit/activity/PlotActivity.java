@@ -6,17 +6,12 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 
-import com.github.mikephil.charting.charts.BarChart;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.XAxis;
 import com.github.mikephil.charting.components.YAxis;
-import com.github.mikephil.charting.data.BarData;
-import com.github.mikephil.charting.data.BarDataSet;
-import com.github.mikephil.charting.data.BarEntry;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
-import com.github.mikephil.charting.utils.ColorTemplate;
 import com.google.common.collect.Lists;
 
 import java.util.ArrayList;
@@ -27,7 +22,6 @@ import java.util.Random;
 import edu.unm.twin_cities.graphit.R;
 import edu.unm.twin_cities.graphit.processor.model.PlotData;
 import edu.unm.twin_cities.graphit.rest.DataProvider;
-import edu.unm.twin_cities.graphit.rest.RandomDataProvider;
 import edu.unm.twin_cities.graphit.rest.SensorDataProvider;
 
 public class PlotActivity extends AppCompatActivity {
