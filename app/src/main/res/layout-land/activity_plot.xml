@@ -1,0 +1,47 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".PlotActivity">
+
+    <!-- not working -->
+    <include android:id="@+id/included_toolbar"
+        layout="@layout/toolbar" />
+
+    <com.github.mikephil.charting.charts.LineChart
+        android:id="@+id/chart"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/toolbar"
+        android:layout_toLeftOf="@+id/graph_operations_button_set" />
+
+    <LinearLayout
+        android:id="@+id/graph_operations_button_set"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_alignParentRight="true"
+        android:gravity="center_horizontal"
+        android:layout_below="@+id/toolbar"
+        android:layout_alignParentBottom="true">
+
+        <Button
+            android:id="@+id/one_week_preset_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/one_week_label" />
+
+        <Button
+            android:id="@+id/one_month_preset_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/one_month_label" />
+
+        <Button
+            android:id="@+id/download_new_data_and_update_graph"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/download_and_update_label" />
+    </LinearLayout>
+
+</RelativeLayout>

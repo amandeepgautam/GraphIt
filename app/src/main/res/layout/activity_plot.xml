@@ -1,10 +1,72 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
-    android:layout_height="match_parent" tools:context=".PlotActivity">
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".PlotActivity">
 
-    <com.github.mikephil.charting.charts.LineChart
-        android:id="@+id/chart"
+    <include android:id="@+id/included_toolbar"
+        android:layout_height="wrap_content"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_alignParentTop="true"
+        layout="@layout/toolbar" />
+
+
+    <RelativeLayout
+        android:id="@+id/chart_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/download_new_data_and_update_graph"
+        android:layout_marginLeft="20dp"
+        android:layout_marginRight="20dp"
+        android:layout_below="@+id/toolbar" >
+
+        <Button
+            android:id="@+id/one_month_preset_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/one_month_label"
+            android:background="@drawable/square_button"
+            android:layout_alignParentTop="true"
+            android:layout_centerHorizontal="true"
+            android:textSize="12sp"
+            android:onClick="setOneMonthAxisView"/>
+
+        <Button
+            android:id="@+id/one_week_preset_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/one_week_label"
+            android:background="@drawable/round_square_button"
+            android:layout_alignParentTop="true"
+            android:layout_toLeftOf="@id/one_month_preset_button"
+            android:textSize="12sp"
+            android:onClick="setOneWeekAxisView"/>
+
+        <Button
+            android:id="@+id/free_view"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/best_view"
+            android:background="@drawable/square_round_button"
+            android:layout_alignParentTop="true"
+            android:layout_toRightOf="@+id/one_month_preset_button"
+            android:textSize="12sp"
+            android:onClick="setFreeAxisView"/>
+
+        <com.github.mikephil.charting.charts.LineChart
+            android:id="@+id/chart"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/free_view"
+            android:layout_alignParentBottom="true"/>
+    </RelativeLayout>
+
+    <Button
+        android:id="@+id/download_new_data_and_update_graph"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/download_and_update_label"
+        android:onClick="updateGraph"
+        android:layout_alignParentBottom="true"/>
 
 </RelativeLayout>

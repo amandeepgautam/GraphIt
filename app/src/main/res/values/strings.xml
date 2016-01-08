@@ -16,4 +16,41 @@
     <string name="unpaired">Unpaired</string>
     <string name="pairing">Pairing</string>
     <string name="title_activity_file_download_info">FileDownloadInfoActivity</string>
+
+    <string name="one_week_label">1 week</string>
+    <string name="one_month_label">1 month</string>
+    <string name="download_and_update_label">Download data and Update Graph</string>
+    <string name="best_view">Free View</string>
+    <string name="title_activity_drawer">DrawerActivity</string>
+    <string name="graph_label">Sensor Data</string>
+
+    <string-array name="nav_actions">
+        <item>Add a device</item>
+        <item>Add a sensor</item>
+        <item>Update Graph</item>
+    </string-array>
+
+    <string name="please_wait_message">Please wait while we update the graph</string>
+    <string name="scanning_for_devices">Scanning for available devices</string>
+    <string name="data_transfer_message">Transferring data from device: %1$s for all sensors attached.</string>
+
+    <string name="no_data_message">Data unavailable</string>
+    <string name="no_data_next_action">Consider adding new devices/sensors and download data</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+
+    <string name="device_name">Name of the device:</string>
+    <string name="device_id">Device identifier:</string>
+    <string name="device_file_location">Default file location</string>
+
+    <string name="sensor_type">Sensor Type:</string>
+    <string name="attached_device">Device connected to:</string>
+    <string name="sensor_name">Sensor Name</string>
+
+    <string name="browse">Browse</string>
+    <string name="scan_again">Scan Again</string>
+
+    <string name="add_device_fragment_scanning_title">Scanning for Devices&#8230;</string>
+    <string name="add_device_fragment_available_title">Available Devices</string>
 </resources>

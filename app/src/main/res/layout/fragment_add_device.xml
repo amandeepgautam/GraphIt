@@ -1,0 +1,22 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context="edu.unm.twin_cities.graphit.fragments.AddDeviceFragment">
+
+    <ListView
+        android:id="@+id/new_discovered_device_list"
+        android:layout_width="match_parent"
+        android:layout_height="0dip"
+        android:layout_weight="1"/>
+    <!--Use this setting for syncing it below.android:layout_height="0dp"
+    android:layout_weight="1" -->
+
+    <Button
+        android:id="@+id/refresh_list_btn"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        android:text="@string/scan_again"/>
+</LinearLayout>

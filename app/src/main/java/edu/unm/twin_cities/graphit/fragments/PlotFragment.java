@@ -1,4 +1,5 @@
-package edu.unm.twin_cities.graphit.activity;
+package edu.unm.twin_cities.graphit.fragments;
+
 
 import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
@@ -10,13 +11,14 @@ import android.content.IntentFilter;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.os.Bundle;
+import android.support.v4.app.Fragment;
 import android.support.v4.content.LocalBroadcastManager;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.util.Log;
-import android.view.Menu;
-import android.view.MenuItem;
+import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Button;
 
 import com.github.mikephil.charting.charts.Chart;
 import com.github.mikephil.charting.charts.LineChart;
@@ -38,11 +40,10 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
-import edu.umn.twin_cities.ServerAction;
 import edu.unm.twin_cities.graphit.R;
+import edu.unm.twin_cities.graphit.activity.FileBrowserActivity;
 import edu.unm.twin_cities.graphit.application.GraphItApplication;
 import edu.unm.twin_cities.graphit.processor.DatabaseHelper;
-import edu.unm.twin_cities.graphit.processor.DatabaseHelper.Fields;
 import edu.unm.twin_cities.graphit.processor.dao.DeviceDao;
 import edu.unm.twin_cities.graphit.processor.dao.DeviceSensorMapDao;
 import edu.unm.twin_cities.graphit.processor.model.Device;
@@ -58,9 +59,12 @@ import edu.unm.twin_cities.graphit.util.Measurement;
 import edu.unm.twin_cities.graphit.util.RemoteConnectionResouceManager;
 import edu.unm.twin_cities.graphit.util.ServerActionUtil;
 
-public class PlotActivity extends DrawerActivity {
+/**
+ * A simple {@link Fragment} subclass.
+ */
+public class PlotFragment extends Fragment implements View.OnClickListener {
 
-    private static String TAG = PlotActivity.class.getSimpleName();
+    private static String TAG = PlotFragment.class.getSimpleName();
 
     private final int REQUEST_ENABLE_BT = 3;
 
@@ -123,20 +127,45 @@ public class PlotActivity extends DrawerActivity {
     private ProgressDialog progressDialog = null;
     private LineChart lineChart;
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_plot);
 
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
+    public PlotFragment() {
+        // Required empty public constructor
+    }
+
+    @Override
+    public void onAttach(Context context) {
+        super.onAttach(context);
+    }
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+    }
+
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
+        // Inflate the layout for this fragment
+        View fragmentView = inflater.inflate(R.layout.fragment_plot, container, false);
+
+        lineChart = (LineChart) fragmentView.findViewById(R.id.chart);
+
+        //override listeners for button so that activity is not called onClick.
+        Button oneWeekGraphViewButton = (Button) fragmentView.findViewById(R.id.one_week_preset_button);
+        oneWeekGraphViewButton.setOnClickListener(this);
+
+        Button oneMonthGraphViewButton = (Button) fragmentView.findViewById(R.id.one_month_preset_button);
+        oneMonthGraphViewButton.setOnClickListener(this);
+
+        Button defaultGraphViewButton = (Button) fragmentView.findViewById(R.id.default_view_preset_button);
+        defaultGraphViewButton.setOnClickListener(this);
 
         setLineChart();
+
+        return fragmentView;
     }
 
     private void setLineChart() {
-        lineChart = (LineChart) findViewById(R.id.chart);
-
         //enable zoom behaviour.
         lineChart.setTouchEnabled(true);
         lineChart.setDragEnabled(true);
@@ -167,8 +196,8 @@ public class PlotActivity extends DrawerActivity {
 
         setAxisProperties(lineChart);
 
-        //DataProvider dataProvider = new RandomDataProvider(this);
-        DataProvider dataProvider = new SensorDataProvider(this);
+        DataProvider dataProvider = new RandomDataProvider(getActivity());
+        //DataProvider dataProvider = new SensorDataProvider(getActivity());
         PlotData plotData = dataProvider.getData();
 
         ArrayList<LineDataSet> dataSet = Lists.newArrayList();
@@ -208,82 +237,21 @@ public class PlotActivity extends DrawerActivity {
         rightAxis.setEnabled(false);
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_plot, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
-    }
-
-    @Override
-    public boolean onPrepareOptionsMenu(Menu menu) {
-        MenuItem item= menu.findItem(R.id.action_settings);
-        item.setVisible(false);
-        super.onPrepareOptionsMenu(menu);
-        return true;
-    }
-
-    //TODO: unregister broadcast receiver.
-
-    private ArrayList<LineDataSet> getDataSet() {
-
-        ArrayList<LineDataSet> dataSets = Lists.newArrayList();
-
-        List<Entry> entryOne = Lists.newArrayList();
-        entryOne.add(new Entry(1, 0));
-        entryOne.add(new Entry(2, 1));
-        entryOne.add(new Entry(3, 2));
-        entryOne.add(new Entry(1, 3));
-        entryOne.add(new Entry(5, 4));
-        entryOne.add(new Entry(0, 5));
-
-        LineDataSet lineDataSetOne = new LineDataSet(entryOne, "first");
-        dataSets.add(lineDataSetOne);
-        List<Entry> entryTwo = Lists.newArrayList();
-        entryTwo.add(new Entry(5, 0));
-        entryTwo.add(new Entry(1, 1));
-        entryTwo.add(new Entry(3, 2));
-        entryTwo.add(new Entry(7, 3));
-        entryTwo.add(new Entry(3, 4));
-        entryTwo.add(new Entry(2, 5));
-
-        LineDataSet lineDataSetTwo = new LineDataSet(entryTwo, "Second");
-        dataSets.add(lineDataSetTwo);
-        //return the result for default devices only.
-
-        return dataSets;
-    }
-
     public void updateGraph(View view) {
-        CommonUtils.startBluetoothDiscovery(this, REQUEST_ENABLE_BT, bReceiver);
+        CommonUtils.startBluetoothDiscovery(getActivity(), REQUEST_ENABLE_BT, bReceiver);
         // Note that the following logic might change depending on how registration
         // of device is done. The following piece is good until when this activity is
         // destroyed when a new device is registered.
         if (registeredDevices == null) {
             registeredDevices = Sets.newHashSet();
-            DeviceDao deviceDao = new DeviceDao(this);
+            DeviceDao deviceDao = new DeviceDao(getActivity());
             List<Device> devices = deviceDao.fetchAll();
             for (Device device : devices) {
                 registeredDevices.add(device.getDeviceId());
             }
         }
 
-        GraphItApplication application = ((GraphItApplication)getApplicationContext());
+        GraphItApplication application = ((GraphItApplication) getActivity().getApplicationContext());
         connectionManager = application.getConnectionManager();
 
         setProgressDialog();
@@ -292,7 +260,7 @@ public class PlotActivity extends DrawerActivity {
 
     private void setProgressDialog() {
         if(progressDialog == null)
-            progressDialog = new ProgressDialog(this);
+            progressDialog = new ProgressDialog(getActivity());
         progressDialog.setTitle(R.string.please_wait_message);
         progressDialog.setMessage(getResources().getString(R.string.scanning_for_devices));
         progressDialog.setCancelable(false);
@@ -300,14 +268,14 @@ public class PlotActivity extends DrawerActivity {
 
     private void updateData(BluetoothDevice bluetoothDevice) {
         try {
-            ConnectionResouceBundle connectionResouceBundle = connectionManager.getConnectionResource(bluetoothDevice, getApplicationContext());
+            ConnectionResouceBundle connectionResouceBundle = connectionManager.getConnectionResource(bluetoothDevice, getActivity().getApplicationContext());
 
             ServerActionUtil serverActionUtil = new ServerActionUtil(connectionResouceBundle);
 
             //aggregate file paths.
-            DeviceSensorMapDao deviceSensorMapDao = new DeviceSensorMapDao(this);
+            DeviceSensorMapDao deviceSensorMapDao = new DeviceSensorMapDao(getActivity());
             Map<String, String> constraint = Maps.newHashMap();
-            constraint.put(Fields.DEVICE_ID.getFieldName(), bluetoothDevice.getAddress());
+            constraint.put(DatabaseHelper.Fields.DEVICE_ID.getFieldName(), bluetoothDevice.getAddress());
             List<DeviceSensorMap> deviceSensorMaps = deviceSensorMapDao.fetchWithConstraints(constraint);
             Set<String> filePaths = Sets.newHashSet();
             for (DeviceSensorMap deviceSensorMap : deviceSensorMaps) {
@@ -319,22 +287,22 @@ public class PlotActivity extends DrawerActivity {
             for (String filePath : filePaths) {
                 List<Measurement<Long, Float>> collection = serverActionUtil.transferFile(filePath);
                 if (collection != null) {
-                    Intent intent = new Intent(this, DataService.class);
+                    Intent intent = new Intent(getActivity(), DataService.class);
                     intent.setAction(FileBrowserActivity.ACTION_INSERT_READINGS_DATA);
                     intent.putExtra(FileBrowserActivity.PARAM_SENSOR_DATA, (Serializable) collection);
                     intent.putExtra(FileBrowserActivity.PARAM_DEVICE_ID, bluetoothDevice.getAddress());     //wierd that it can throw NPE here.
 
                     //register a local broadcast.
-                    LocalBroadcastManager localBroadcastManager = LocalBroadcastManager.getInstance(this);
+                    LocalBroadcastManager localBroadcastManager = LocalBroadcastManager.getInstance(getActivity());
                     IntentFilter intentFilter = new IntentFilter();
                     intentFilter.addAction(DataService.READINGS_DATA_INSERT_COMPLETE);
                     localBroadcastManager.registerReceiver(bReceiver, intentFilter);
 
-                    startService(intent);
+                    getActivity().startService(intent);
                 }
             }
         } catch(Exception e) {
-            Log.e(TAG, "Exception while transfer file component of updating graphs." ,e);
+            Log.e(TAG, "Exception while transsfer file component of updating graphs." ,e);
         }
 
     }
@@ -353,19 +321,50 @@ public class PlotActivity extends DrawerActivity {
     }
 
     public void setOneWeekAxisView(View view) {
-        float scaleX = lineChart.getXValCount() / 3f;
-        //lineChart.setScaleX(scaleX);
-        //lineChart.zoom(scaleX, 1, );
-        lineChart.setScaleMinima(10f, 1f);
-        //XAxis xAxis = lineChart.getXAxis();
+        //Assumption is 2 readins a day. and Hence the scale. Ideally one could have
+        //parsed the dates to identify the reading frequency.
+        float scaleX = lineChart.getXValCount() / 14f;
+        lineChart.setScaleMinima(scaleX, 1f);
         lineChart.invalidate();
     }
 
-    public void setOneMonthAxisView() {
-
+    public void setOneMonthAxisView(View view) {
+        //Assumption is 2 readins a day. and Hence the scale. Ideally one could have
+        //parsed the dates to identify the reading frequency.
+        float scaleX = lineChart.getXValCount() / 60f;
+        lineChart.setScaleMinima(scaleX, 1f);
+        lineChart.invalidate();
     }
 
-    public void setFreeAxisView() {
+    public void setFreeAxisView(View view) {
+        lineChart.setScaleMinima(1f, 1f);
+        lineChart.invalidate();
+    }
 
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+    }
+
+    @Override
+    public void onDetach() {
+        super.onDetach();
+    }
+
+    @Override
+    public void onClick(View v) {
+        switch (v.getId()) {
+            case R.id.one_month_preset_button:
+                setOneMonthAxisView(v);
+                break;
+            case R.id.one_week_preset_button:
+                setOneWeekAxisView(v);
+                break;
+            case R.id.default_view_preset_button:
+                setOneMonthAxisView(v);
+                break;
+            default:
+                break;
+        }
     }
 }

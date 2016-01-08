@@ -14,23 +14,23 @@ import java.util.Map;
 
 import edu.unm.twin_cities.graphit.processor.DatabaseHelper.Fields;
 import edu.unm.twin_cities.graphit.processor.DatabaseHelper.Table;
-import edu.unm.twin_cities.graphit.processor.model.DeviceReading;
+import edu.unm.twin_cities.graphit.processor.model.Reading;
 
 /**
  * Created by aman on 20/8/15.
  */
-public class DeviceReadingDao extends AbstractDao {
+public class ReadingDao extends AbstractDao {
 
-    public DeviceReadingDao(final Context context) {
-        super(context, DeviceReadingDao.class.getSimpleName(), Table.DEVICE_READING.getTableName());
+    public ReadingDao(final Context context) {
+        super(context, ReadingDao.class.getSimpleName(), Table.READING.getTableName());
     }
 
-    public long insert(final DeviceReading deviceReading) {
+    public long insert(final Reading reading) {
         ContentValues args = new ContentValues();
-        args.put(Fields.DEVICE_ID.getFieldName(), deviceReading.getDeviceId());
-        args.put(Fields.READING.getFieldName(), deviceReading.getReading());
-        args.put(Fields.TIMESTAMP.getFieldName(), deviceReading.getTimestamp());
-        String measurementUnit = deviceReading.getMeasurementUnit();
+        args.put(Fields.SENSOR_ID.getFieldName(), reading.getSensorId());
+        args.put(Fields.READING.getFieldName(), reading.getReading());
+        args.put(Fields.TIMESTAMP.getFieldName(), reading.getTimestamp());
+        String measurementUnit = reading.getMeasurementUnit();
         if (measurementUnit != null)
             args.put(Fields.MEASUREMENT_UNIT.getFieldName(), measurementUnit);
         else
@@ -42,35 +42,32 @@ public class DeviceReadingDao extends AbstractDao {
         return rowNum;
     }
 
-    public DeviceReading getDeviceReadings(String deviceId) {
-        throw new UnsupportedOperationException("Not implemented yet.");
-    }
-
-    public Map<String, List<DeviceReading>> getDeviceReadings(List<String> deviceIds) {
+    public Map<String, List<Reading>> getDeviceReadings(List<String> deviceIds) {
         String devices = Joiner.on("', '").skipNulls().join(deviceIds);
-        String whereClause = Fields.DEVICE_ID.getFieldName() + " IN ('" + devices + "')";
+        String whereClause = Fields.SENSOR_ID.getFieldName() + " IN ('" + devices + "')";
 
         open();
         Cursor cursor = getSqLiteDatabase().query(getTableName(), null, whereClause, null, null, null, null);
-        Map<String, List<DeviceReading>> response = parseAllFieldsResponse(cursor);
+        Map<String, List<Reading>> response = parseAllFieldsResponse(cursor);
         close();
+
         return response;
     }
 
-    private Map<String, List<DeviceReading>> parseAllFieldsResponse(Cursor cursor) {
-        Map<String, List<DeviceReading>> allDeviceReadings = Maps.newHashMap();
+    private Map<String, List<Reading>> parseAllFieldsResponse(Cursor cursor) {
+        Map<String, List<Reading>> allDeviceReadings = Maps.newHashMap();
         while(cursor.moveToNext()) {
-            String deviceId = cursor.getString(cursor.getColumnIndex(Fields.DEVICE_ID.getFieldName()));
+            String deviceId = cursor.getString(cursor.getColumnIndex(Fields.SENSOR_ID.getFieldName()));
             float reading = cursor.getFloat(cursor.getColumnIndex(Fields.READING.getFieldName()));
             String measurementUnit = cursor.getString(cursor.getColumnIndex(Fields.MEASUREMENT_UNIT.getFieldName()));
             long timestamp = cursor.getLong(cursor.getColumnIndex(Fields.TIMESTAMP.getFieldName()));
 
-            List<DeviceReading> deviceReadings = allDeviceReadings.get(deviceId);
+            List<Reading> deviceReadings = allDeviceReadings.get(deviceId);
             if (deviceReadings == null) {
                 deviceReadings = Lists.newArrayList();
                 allDeviceReadings.put(deviceId, deviceReadings);
             }
-            deviceReadings.add(new DeviceReading(deviceId, reading, measurementUnit, timestamp));
+            deviceReadings.add(new Reading(deviceId, reading, measurementUnit, timestamp));
         }
         return allDeviceReadings;
     }

@@ -1,4 +1,4 @@
-package edu.unm.twin_cities.graphit.processor.model;
+package edu.unm.twin_cities.graphit.util;
 
 import android.util.Pair;
 
@@ -6,45 +6,41 @@ import com.google.common.collect.Lists;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.nio.DoubleBuffer;
-import java.util.Date;
 import java.util.List;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 /**
  * Created by aman on 18/9/15.
  */
 @Data
-public class SensorReadings implements SensorReading<Long, Float>, Serializable {
+public class MeasurementImpl implements Measurement<Long, Float>, Serializable {
 
     private static final long serialVersionUID = -2518143671167959230L;
 
     /**
-     * location of the sensor, while it took the reading.
+     * Location of the sensor, while it took the reading.
      */
-    String location;
+    private String location;
 
-    String sensorName;
+    private String sensorName;
 
-    public SensorReadings(String location, String sensorName) {
+    /**
+     * Map of Sensor name and the readings it took
+     */
+    private List<Pair<Long, Float>> timeStampReadingTuple;
+
+    public MeasurementImpl(String location, String sensorName) {
         this.location = location;
         this.sensorName = sensorName;
         timeStampReadingTuple = Lists.newArrayList();
     }
 
-    /**
-     * Map of Sensor name and the readings it took
-     */
-    List<Pair<Long, Float>> timeStampReadingTuple;
-
-    public void addReading(Pair<Long, Float> pair) {
-        timeStampReadingTuple.add(pair);
+    public void addMeasurement(Pair<Long, Float> measurement) {
+        timeStampReadingTuple.add(measurement);
     }
 
-    public List<Pair<Long, Float>> getReadings() {
+    public List<Pair<Long, Float>> getMeasurement() {
         return timeStampReadingTuple;
     }
 

@@ -9,28 +9,28 @@ import lombok.Data;
 
 @Data
 @AllArgsConstructor(suppressConstructorProperties = true)
-public class DeviceType {
+public class SensorType {
     /**
-     * Device Type
+     * DeviceSensorMap Type
      */
-    private String deviceTypeLabel;
+    private String sensorTypeLabel;
 
     /**
      * Identifier for device type.
      */
-    private DeviceTypeID deviceTypeId;
+    private SensorTypeID sensorTypeId;
 
     /**
      * Any useful description for the device.
      */
-    private String deviceTypeDescription;
+    private String sensorTypeDescription;
 
     /**
      * This class is used for grouping the devices together for graph plotting.
      * Assume device type is SOIL_SENSOR, then it would make more sense to make comparitive
      * study between such sensors.
      */
-    public enum DeviceTypeID {
+    public enum SensorTypeID {
         /**
          * All devices of this type would be grouped together for plotting.
          */

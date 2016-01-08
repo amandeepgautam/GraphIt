@@ -15,14 +15,11 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import edu.unm.twin_cities.graphit.processor.model.SensorReading;
-import edu.unm.twin_cities.graphit.processor.model.SensorReadings;
 import lombok.Getter;
 
 /**
@@ -32,8 +29,8 @@ public class FileParserImpl implements FileParser {
 
     private static final String TAG = FileParserImpl.class.getSimpleName();
 
-    public List<SensorReading<Long, Float>> parse(byte[] input) throws IOException {
-        Map<Pair<String, String>, SensorReading<Long, Float>> sensorData = Maps.newHashMap();
+    public List<Measurement<Long, Float>> parse(byte[] input) throws IOException {
+        Map<Pair<String, String>, Measurement<Long, Float>> sensorData = Maps.newHashMap();
         if (input.length != 0) {
             ByteArrayInputStream inputStream = new ByteArrayInputStream(input);
 
@@ -59,18 +56,18 @@ public class FileParserImpl implements FileParser {
                 for (CSVRecord record : csvParser) {
                     String location = record.get(MandatoryHeaderFields.LOCATION);
                     String timeStamp = record.get(MandatoryHeaderFields.TIMESTAMP);
-                    SimpleDateFormat f = new SimpleDateFormat("dd/MM/yyyy");
+                    SimpleDateFormat f = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
                     Date date = f.parse(timeStamp);
                     long milliseconds = date.getTime();
                     for (String sensorName : keys) {
                         Pair<String, String> pair = new Pair<>(location, sensorName);
-                        SensorReading<Long, Float> sensorReading = sensorData.get(pair);
-                        if (sensorReading == null) {
-                            sensorReading = new SensorReadings(location, sensorName);
-                            sensorData.put(pair, sensorReading);
+                        Measurement<Long, Float> measurement = sensorData.get(pair);
+                        if (measurement == null) {
+                            measurement = new MeasurementImpl(location, sensorName);
+                            sensorData.put(pair, measurement);
                         }
                         String reading = record.get(sensorName);
-                        sensorReading.addReading(new Pair<>(milliseconds, Float.valueOf(reading)));
+                        measurement.addMeasurement(new Pair<>(milliseconds, Float.valueOf(reading)));
                     }
                 }
             } catch (ParseException parseException) {

@@ -229,7 +229,7 @@ public class BluetoothScanner extends AppCompatActivity {
         }
     }
 
-    private String getBondState(BluetoothDevice bluetoothDevice) {
+    public String getBondState(BluetoothDevice bluetoothDevice) {
         int bondedState = bluetoothDevice.getBondState();
         if(bondedState == BluetoothDevice.BOND_BONDED) {
             return getResources().getString(R.string.paired);

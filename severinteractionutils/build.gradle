@@ -1,6 +1,0 @@
-apply plugin: 'java'
-
-dependencies {
-    compile fileTree(include: ['*.jar'], dir: 'libs')
-    compile 'org.projectlombok:lombok:1.12.6'
-}

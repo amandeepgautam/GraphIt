@@ -8,11 +8,11 @@ import lombok.Data;
  */
 @Data
 @AllArgsConstructor(suppressConstructorProperties = true)
-public class DeviceReading {
+public class Reading {
     /**
      * The identifier for device.
      */
-    private String deviceId;
+    private String sensorId;
 
     /**
      * Reading/measurement.
@@ -32,7 +32,7 @@ public class DeviceReading {
     /**
      * Constructor excluding the auto inc. id
      */
-    public DeviceReading(String deviceId, float reading, long timestamp) {
+    public Reading(String deviceId, float reading, long timestamp) {
         this(deviceId, reading, null, timestamp);
     }
 }

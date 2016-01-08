@@ -4,7 +4,8 @@
     android:orientation="vertical"
     tools:context="edu.unm.twin_cities.graphit.activity.FileBrowserActivity">
 
-    <include layout="@layout/image_view_toolbar" />
+    <include android:id="@+id/included_toolbar"
+        layout="@layout/image_view_toolbar" />
 
     <ListView
         android:id="@+id/files"

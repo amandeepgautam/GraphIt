@@ -10,7 +10,7 @@ import android.view.View;
 import edu.unm.twin_cities.graphit.R;
 import edu.unm.twin_cities.graphit.processor.model.PlotData;
 
-public class TestActivity extends Activity {
+public class TestActivity extends DrawerActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

@@ -29,11 +29,11 @@ public class PlotData {
 
     List<String> xValues = Lists.newArrayList();
 
-    public PlotData(Map<String, List<DeviceReading>> allDeviceReadings) {
+    public PlotData(Map<String, List<Reading>> allDeviceReadings) {
         SortedSet<Long> sortedSet = Sets.newTreeSet();
-        for (Map.Entry<String, List<DeviceReading>> entry : allDeviceReadings.entrySet()) {
-            List<DeviceReading> readings = entry.getValue();
-            for (DeviceReading reading : readings) {
+        for (Map.Entry<String, List<Reading>> entry : allDeviceReadings.entrySet()) {
+            List<Reading> readings = entry.getValue();
+            for (Reading reading : readings) {
                 long xValue = reading.getTimestamp();  //time stamp of the reading.
                 sortedSet.add(xValue);
             }
@@ -48,10 +48,10 @@ public class PlotData {
             xValues.add(df2.format(date));
         }
 
-        for (Map.Entry<String, List<DeviceReading>> entry : allDeviceReadings.entrySet()) {
+        for (Map.Entry<String, List<Reading>> entry : allDeviceReadings.entrySet()) {
             String deviceId = entry.getKey();
-            List<DeviceReading> readings = entry.getValue();
-            for (DeviceReading reading : readings) {
+            List<Reading> readings = entry.getValue();
+            for (Reading reading : readings) {
                 float yValue = reading.getReading();
                 long xValue = reading.getTimestamp();  //time stamp of the reading.
                 List<Entry> readingEntry = data.get(deviceId);

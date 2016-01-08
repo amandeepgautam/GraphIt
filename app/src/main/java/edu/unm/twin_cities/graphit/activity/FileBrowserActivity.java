@@ -1,14 +1,13 @@
 package edu.unm.twin_cities.graphit.activity;
 
-import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothSocket;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
 import android.support.v4.content.LocalBroadcastManager;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -26,39 +25,26 @@ import android.widget.TextView;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-import com.google.common.collect.Lists;
 
-import org.apache.commons.codec.binary.Hex;
-
-import java.io.EOFException;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.Serializable;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.Deque;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
-import edu.umn.twin_cities.ErrorCode;
 import edu.umn.twin_cities.FileAdapter;
 import edu.umn.twin_cities.FileAdapter.ResourceType;
-import edu.umn.twin_cities.ServerAction;
 import edu.unm.twin_cities.graphit.R;
 import edu.unm.twin_cities.graphit.application.GraphItApplication;
-import edu.unm.twin_cities.graphit.processor.model.SensorReading;
+import edu.unm.twin_cities.graphit.util.Measurement;
 import edu.unm.twin_cities.graphit.service.DataService;
 import edu.unm.twin_cities.graphit.util.ConnectionResouceBundle;
 import edu.unm.twin_cities.graphit.util.RemoteConnectionResouceManager;
-import edu.unm.twin_cities.graphit.util.FileParser;
-import edu.unm.twin_cities.graphit.util.FileParserImpl;
 import edu.unm.twin_cities.graphit.util.ImageLoader;
+import edu.unm.twin_cities.graphit.util.ServerActionUtil;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -67,8 +53,8 @@ public class FileBrowserActivity extends AppCompatActivity {
     private BroadcastReceiver bReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            if(intent.getAction().equals(DataService.RECEIVE_DATA_INSERT_COMPLETE )) {
-                boolean insertSuccessful = (boolean) intent.getExtras().get(DataService.INSERT_COMPLETE);
+            if(intent.getAction().equals(DataService.READINGS_DATA_INSERT_COMPLETE)) {
+                boolean insertSuccessful = (boolean) intent.getExtras().get(DataService.PARAM_INSERT_COMPLETE);
                 if (insertSuccessful) {
                     Intent activityIntent = new Intent(getApplicationContext(), PlotActivity.class);
                     startActivity(activityIntent);
@@ -80,10 +66,13 @@ public class FileBrowserActivity extends AppCompatActivity {
     };
 
     public static final String PARAM_SENSOR_DATA = "sensor_data";
+    public static final String PARAM_DEVICE_ID = "device_id";
+    public static final String ACTION_INSERT_READINGS_DATA = "insert_reasings_data";
+
     private final int CACHE_SIZE = 10;
     private final String TAG = this.getClass().getSimpleName();
 
-    ConnectionResouceBundle connectionResouceBundle = null;
+    private ServerActionUtil serverActionUtil = null;
     private FileArrayAdapter fileArrayAdapter;
 
     LoadingCache<String, List<FileAdapter>> browserCache = CacheBuilder.newBuilder()
@@ -92,7 +81,7 @@ public class FileBrowserActivity extends AppCompatActivity {
                     new CacheLoader<String, List<FileAdapter>>() {
                         @Override
                         public List<FileAdapter> load(String key) throws Exception {
-                            return listFiles(key);
+                            return serverActionUtil.listFiles(key);
                         }
                     }
             );
@@ -106,7 +95,10 @@ public class FileBrowserActivity extends AppCompatActivity {
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.image_view_toolbar);
         setSupportActionBar(toolbar);
-        getSupportActionBar().setDisplayShowTitleEnabled(false);    //remove the application name from toolbar.
+        ActionBar actionBar = getSupportActionBar();
+        if (actionBar != null)
+            actionBar.setDisplayShowTitleEnabled(false);    //remove the application name from toolbar.
+
         final TextView toolBarTitle = (TextView) toolbar.findViewById(R.id.image_view_toolbar_title);
 
         toolbar.setOnClickListener(new View.OnClickListener() {
@@ -125,12 +117,14 @@ public class FileBrowserActivity extends AppCompatActivity {
             }
         });
 
-        BluetoothDevice bluetoothDevice = (BluetoothDevice) getIntent().getExtras().get(BluetoothScanner.PARAM_BLUETOOTH_DEVICE);
+        final BluetoothDevice bluetoothDevice = (BluetoothDevice) getIntent().getExtras().get(BluetoothScanner.PARAM_BLUETOOTH_DEVICE);
         try {
             GraphItApplication application = ((GraphItApplication)getApplicationContext());
             RemoteConnectionResouceManager connectionManager = application.getConnectionManager();
 
-            connectionResouceBundle = connectionManager.getConnectionResource(bluetoothDevice, getApplicationContext());
+            ConnectionResouceBundle connectionResouceBundle = connectionManager.getConnectionResource(bluetoothDevice, getApplicationContext());
+
+            serverActionUtil = new ServerActionUtil(connectionResouceBundle);
 
             ListView listView = (ListView) findViewById(R.id.files);
             fileArrayAdapter = new FileArrayAdapter(this, R.layout.resource_info, new ArrayList<FileAdapter>());
@@ -151,17 +145,17 @@ public class FileBrowserActivity extends AppCompatActivity {
                             fileArrayAdapter.addAll(files);
                             toolBarTitle.setText(path);
                         } else if (file.getResourceType() == ResourceType.FILE) {
-                            byte [] fileContents = transferFile(file.getPath());
-                            if (fileContents.length != 0) {
-                                FileParser parser = new FileParserImpl();
-                                List<SensorReading<Long, Float>> collection = parser.parse(fileContents);
+                            List<Measurement<Long, Float>> collection = serverActionUtil.transferFile(file.getPath());
+                            if (collection != null) {
                                 Intent intent = new Intent(FileBrowserActivity.this, DataService.class);
+                                intent.setAction(ACTION_INSERT_READINGS_DATA);
                                 intent.putExtra(PARAM_SENSOR_DATA, (Serializable)collection);
+                                intent.putExtra(PARAM_DEVICE_ID, bluetoothDevice.getAddress());     //wierd that it can throw NPE here.
 
                                 //register a local broadcast.
                                 LocalBroadcastManager localBroadcastManager = LocalBroadcastManager.getInstance(FileBrowserActivity.this);
                                 IntentFilter intentFilter = new IntentFilter();
-                                intentFilter.addAction(DataService.RECEIVE_DATA_INSERT_COMPLETE);
+                                intentFilter.addAction(DataService.READINGS_DATA_INSERT_COMPLETE);
                                 localBroadcastManager.registerReceiver(bReceiver, intentFilter);
 
                                 startService(intent);
@@ -196,79 +190,6 @@ public class FileBrowserActivity extends AppCompatActivity {
         }
     }
 
-    private List<FileAdapter> listFiles(String path) throws ClassNotFoundException, IOException {
-        try {
-            ObjectOutputStream objectOutputStream = connectionResouceBundle.getObjectOutputStream();
-            ObjectInputStream objectInputStream = connectionResouceBundle.getObjectInputStream();
-
-            objectOutputStream.writeObject(ServerAction.LIST_FILES_IN_DIR);
-            objectOutputStream.writeObject(path);
-            objectOutputStream.flush();
-            Object object = objectInputStream.readObject();
-            FileAdapter[] files = null;
-            if (object instanceof ErrorCode) {
-                ErrorCode errorCode = (ErrorCode) object;
-                throw new IllegalArgumentException(errorCode.getErrorMsg());
-            } else if (object instanceof FileAdapter[]) {
-                files = (FileAdapter[]) object;
-            } else {
-                throw new IllegalStateException("Unrecognized object sent by the server.");
-            }
-            return Arrays.asList(files);
-        } catch (EOFException eofe) {
-            /**Excpected when the remote closes the stream and there is nothing more to read.
-             * Igonre this exception.**/
-        }
-        return Lists.newArrayList();
-    }
-
-    private byte[] transferFile(String path) throws IOException, ClassNotFoundException {
-        try {
-            ObjectOutputStream objectOutputStream = connectionResouceBundle.getObjectOutputStream();
-            ObjectInputStream objectInputStream = connectionResouceBundle.getObjectInputStream();
-
-            objectOutputStream.writeObject(ServerAction.TRANSFER_FILE);
-            objectOutputStream.writeObject(path);
-            objectOutputStream.writeObject(BluetoothAdapter.getDefaultAdapter().getAddress());
-            objectOutputStream.flush();
-            Object object = objectInputStream.readObject();
-            String receivedMd5Sum;
-            if (object instanceof ErrorCode) {
-                ErrorCode errorCode = (ErrorCode) object;
-                throw new IllegalArgumentException(errorCode.getErrorMsg());
-            } else if (object instanceof String) {
-                receivedMd5Sum = (String) object;
-            } else {
-                throw new IllegalStateException("Unrecognized object sent by server");
-            }
-
-            byte[] fileContents;
-            object = objectInputStream.readObject();
-            if (object instanceof ErrorCode) {
-                //TODO: test this bit.
-                ErrorCode errorCode = (ErrorCode) object;
-                throw new IllegalArgumentException(errorCode.getErrorMsg());
-            } else if (object.getClass().isArray()
-                    && byte.class.isAssignableFrom(object.getClass().getComponentType())) {
-                fileContents = (byte[]) object;
-            } else {
-                throw new IllegalStateException("Unrecognized object sent by server");
-            }
-            //inefficient as input is parsed twice but fail fast.
-            MessageDigest messageDigest = MessageDigest.getInstance("MD5");
-            String calculatedMd5Sum = new String(Hex.encodeHex(messageDigest.digest(fileContents)));
-            if (!calculatedMd5Sum.equals(receivedMd5Sum)) {
-                throw new IllegalStateException("Checksum verification failed. Please download again");
-            }
-            return fileContents;
-        } catch (NoSuchAlgorithmException nsae) {
-            throw new IllegalStateException("Could not get Algorithm to calcuate checksum");
-        } catch (EOFException eofe) {
-            /**Excpected when the remote closes the stream and there is nothing more to read.
-             * Igonre this exception.**/
-        }
-        return new byte[0];         //TODO: see if there can be a case in which after exception you have some meaningful bytes in the buffer.
-    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
