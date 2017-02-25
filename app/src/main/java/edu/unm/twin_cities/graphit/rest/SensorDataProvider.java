@@ -1,12 +1,16 @@
 package edu.unm.twin_cities.graphit.rest;
 
 import android.content.Context;
+import android.util.Pair;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import edu.unm.twin_cities.graphit.processor.DatabaseHelper.Fields;
 import edu.unm.twin_cities.graphit.processor.dao.SensorDao;
@@ -27,19 +31,21 @@ public class SensorDataProvider implements DataProvider {
     }
 
     @Override
-    public PlotData getData() {
-        Map<String, String> constraints = Maps.newHashMap();
-        constraints.put(Fields.SENSOR_TYPE_ID.getFieldName(), SensorTypeID.DEFAULT.name());
+    public PlotData getData(SensorTypeID sensorTypeID) {
+        Map<String, List<String>> constraints = Maps.newHashMap();
+        constraints.put(Fields.SENSOR_TYPE_ID.getFieldName()
+                , Arrays.asList(sensorTypeID.getId()));
         SensorDao sensorDao = new SensorDao(context);
         List<Sensor> sensors = sensorDao.fetchWithConstraints(constraints);
 
         constraints.clear();
-        List<String> deviceIds = Lists.newArrayList();
+        Set<String> sensorIds = Sets.newHashSet();
         for(Sensor sensor : sensors) {
-            deviceIds.add(sensor.getSensorId());
+            sensorIds.add(sensor.getSensorId());
         }
         ReadingDao readingDao = new ReadingDao(context);
-        Map<String, List<Reading>> deviceReadings = readingDao.getDeviceReadings(deviceIds);
+        Map<Pair<String, String>, List<Reading>> deviceReadings = readingDao
+                .getDeviceReadings(Lists.newArrayList(sensorIds));
 
         PlotData plotData = new PlotData(deviceReadings);
         return plotData;

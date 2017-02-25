@@ -3,4 +3,43 @@
     <dimen name="activity_horizontal_margin">16dp</dimen>
     <dimen name="activity_vertical_margin">16dp</dimen>
     <dimen name="fab_margin">16dp</dimen>
+    <dimen name="button_easy_accessibility_padding">8dp</dimen>
+    <dimen name="button_min_width">88dp</dimen>
+    <dimen name="button_height">36dp</dimen>
+
+    <dimen name="application_layout_left_padding">16dp</dimen>
+    <dimen name="application_layout_right_padding">16dp</dimen>
+
+    <dimen name="text_view_padding_bottom">8dp</dimen>
+    <dimen name="text_view_padding_top">8dp</dimen>
+    <dimen name="text_view_padding_right">8dp</dimen>
+    <dimen name="text_view_padding_left">4dp</dimen>
+
+    <dimen name="spinner_text_view_padding">8dp</dimen>
+
+    <dimen name="button_top_margin">8dp</dimen>
+    <dimen name="button_bottom_margin">8dp</dimen>
+
+    <dimen name="list_view_padding_bottom">8dp</dimen>
+    <dimen name="list_view_padding_top">8dp</dimen>
+    <dimen name="list_view_margin_top">4dp</dimen>
+
+    <dimen name="separate_subgroup_margin">8dp</dimen>   <!--Margin for creating subgroups in the form.-->
+    <dimen name="line_separator_padding">4dp</dimen>
+    
+    <dimen name="single_line_item_list_height">48dp</dimen>
+    <dimen name="auxiliary_single_list_item_action_left_padding">16dp</dimen>
+    <dimen name="auxiliary_single_list_item_action_right_padding">16dp</dimen>
+    <dimen name="auxiliary_single_list_item_action_top_padding">12dp</dimen>
+    <dimen name="auxiliary_single_list_item_action_bottom_padding">12dp</dimen>
+    <dimen name="auxiliary_single_list_item_action_height">48dp</dimen>
+    <dimen name="auxiliary_single_list_item_action_width">56dp</dimen>
+    <dimen name="single_list_item_text_view_padding_top">10dp</dimen>
+    <dimen name="single_list_item_text_view_padding_bottom">1dp</dimen>
+
+    <dimen name="graph_view_top_padding">8dp</dimen>
+    <dimen name="graph_view_bottom_padding">8dp</dimen>
+
+    <dimen name="nav_drawer_padding">16dp</dimen>
+    <dimen name="spinner_arrow_size">10dp</dimen>
 </resources>

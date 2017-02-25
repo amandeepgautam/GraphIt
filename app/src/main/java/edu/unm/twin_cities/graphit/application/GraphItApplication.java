@@ -1,7 +1,7 @@
 package edu.unm.twin_cities.graphit.application;
 
 import android.app.Application;
-import edu.unm.twin_cities.graphit.util.RemoteConnectionResouceManager;
+import edu.unm.twin_cities.graphit.util.RemoteConnectionResourceManager;
 import lombok.Data;
 
 /**
@@ -9,6 +9,6 @@ import lombok.Data;
  */
 @Data
 public class GraphItApplication extends Application {
-    private RemoteConnectionResouceManager connectionManager = new RemoteConnectionResouceManager();
+    private RemoteConnectionResourceManager connectionManager = new RemoteConnectionResourceManager();
 
 }

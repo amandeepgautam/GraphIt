@@ -29,7 +29,8 @@ public class FileParserImpl implements FileParser {
 
     private static final String TAG = FileParserImpl.class.getSimpleName();
 
-    public List<Measurement<Long, Float>> parse(byte[] input) throws IOException {
+    public List<Measurement<Long, Float>> parseAndPrepareReadingRecords(byte[] input, String deviceId) throws IOException {
+
         Map<Pair<String, String>, Measurement<Long, Float>> sensorData = Maps.newHashMap();
         if (input.length != 0) {
             ByteArrayInputStream inputStream = new ByteArrayInputStream(input);
@@ -44,8 +45,7 @@ public class FileParserImpl implements FileParser {
             Set<String> keys = csvParser.getHeaderMap().keySet();
 
             //validate the columns and extract the sensor names.
-            if (keys.contains(MandatoryHeaderFields.LOCATION.toString()) && keys.contains(MandatoryHeaderFields.TIMESTAMP.toString())) {
-                keys.remove(MandatoryHeaderFields.LOCATION.toString());
+            if (keys.contains(MandatoryHeaderFields.TIMESTAMP.toString())) {
                 keys.remove(MandatoryHeaderFields.TIMESTAMP.toString());
             } else {
                 //TODO: see the application do not crash with this exception.
@@ -54,19 +54,18 @@ public class FileParserImpl implements FileParser {
 
             try {
                 for (CSVRecord record : csvParser) {
-                    String location = record.get(MandatoryHeaderFields.LOCATION);
                     String timeStamp = record.get(MandatoryHeaderFields.TIMESTAMP);
                     SimpleDateFormat f = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
                     Date date = f.parse(timeStamp);
                     long milliseconds = date.getTime();
-                    for (String sensorName : keys) {
-                        Pair<String, String> pair = new Pair<>(location, sensorName);
+                    for (String sensorId : keys) {
+                        Pair<String, String> pair = new Pair<>(deviceId, sensorId);
                         Measurement<Long, Float> measurement = sensorData.get(pair);
                         if (measurement == null) {
-                            measurement = new MeasurementImpl(location, sensorName);
+                            measurement = new MeasurementImpl(deviceId, sensorId);
                             sensorData.put(pair, measurement);
                         }
-                        String reading = record.get(sensorName);
+                        String reading = record.get(sensorId);
                         measurement.addMeasurement(new Pair<>(milliseconds, Float.valueOf(reading)));
                     }
                 }
@@ -81,7 +80,6 @@ public class FileParserImpl implements FileParser {
     }
 
     private enum MandatoryHeaderFields {
-        LOCATION("Location"),
         TIMESTAMP("TimeStamp");
 
         @Getter

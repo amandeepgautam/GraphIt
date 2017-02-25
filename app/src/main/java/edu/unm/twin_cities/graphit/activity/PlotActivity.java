@@ -11,7 +11,6 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.os.Bundle;
 import android.support.v4.content.LocalBroadcastManager;
-import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
@@ -38,24 +37,17 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
-import edu.umn.twin_cities.ServerAction;
 import edu.unm.twin_cities.graphit.R;
-import edu.unm.twin_cities.graphit.application.GraphItApplication;
-import edu.unm.twin_cities.graphit.processor.DatabaseHelper;
 import edu.unm.twin_cities.graphit.processor.DatabaseHelper.Fields;
-import edu.unm.twin_cities.graphit.processor.dao.DeviceDao;
 import edu.unm.twin_cities.graphit.processor.dao.DeviceSensorMapDao;
-import edu.unm.twin_cities.graphit.processor.model.Device;
 import edu.unm.twin_cities.graphit.processor.model.DeviceSensorMap;
 import edu.unm.twin_cities.graphit.processor.model.PlotData;
 import edu.unm.twin_cities.graphit.rest.DataProvider;
-import edu.unm.twin_cities.graphit.rest.RandomDataProvider;
 import edu.unm.twin_cities.graphit.rest.SensorDataProvider;
 import edu.unm.twin_cities.graphit.service.DataService;
-import edu.unm.twin_cities.graphit.util.CommonUtils;
-import edu.unm.twin_cities.graphit.util.ConnectionResouceBundle;
+import edu.unm.twin_cities.graphit.util.ConnectionResourceBundle;
 import edu.unm.twin_cities.graphit.util.Measurement;
-import edu.unm.twin_cities.graphit.util.RemoteConnectionResouceManager;
+import edu.unm.twin_cities.graphit.util.RemoteConnectionResourceManager;
 import edu.unm.twin_cities.graphit.util.ServerActionUtil;
 
 public class PlotActivity extends DrawerActivity {
@@ -118,7 +110,7 @@ public class PlotActivity extends DrawerActivity {
         }
     };
 
-    RemoteConnectionResouceManager connectionManager = null; //lazy initialization.
+    RemoteConnectionResourceManager connectionManager = null; //lazy initialization.
 
     private ProgressDialog progressDialog = null;
     private LineChart lineChart;
@@ -169,10 +161,10 @@ public class PlotActivity extends DrawerActivity {
 
         //DataProvider dataProvider = new RandomDataProvider(this);
         DataProvider dataProvider = new SensorDataProvider(this);
-        PlotData plotData = dataProvider.getData();
+        PlotData plotData = dataProvider.getData(null);
 
         ArrayList<LineDataSet> dataSet = Lists.newArrayList();
-        for (Map.Entry<String, List<Entry>> elem : plotData.getData().entrySet()) {
+        /*for (Map.Entry<String, List<Entry>> elem : plotData.getData().entrySet()) {
             //generate a random color. Hope that it would not clash,if things are truely random.
             Random rnd = new Random();
             int color = Color.argb(255, rnd.nextInt(256), rnd.nextInt(256), rnd.nextInt(256));
@@ -184,7 +176,7 @@ public class PlotActivity extends DrawerActivity {
             lineDataSet.setCircleSize(1f);
 
             dataSet.add(lineDataSet);
-        }
+        }*/
 
         LineData data = new LineData(plotData.getXValues(), dataSet);
         lineChart.setData(data);
@@ -238,6 +230,17 @@ public class PlotActivity extends DrawerActivity {
         return true;
     }
 
+    @Override
+    public void onResume() {
+
+        super.onResume();
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+    }
+
     //TODO: unregister broadcast receiver.
 
     private ArrayList<LineDataSet> getDataSet() {
@@ -269,27 +272,6 @@ public class PlotActivity extends DrawerActivity {
         return dataSets;
     }
 
-    public void updateGraph(View view) {
-        CommonUtils.startBluetoothDiscovery(this, REQUEST_ENABLE_BT, bReceiver);
-        // Note that the following logic might change depending on how registration
-        // of device is done. The following piece is good until when this activity is
-        // destroyed when a new device is registered.
-        if (registeredDevices == null) {
-            registeredDevices = Sets.newHashSet();
-            DeviceDao deviceDao = new DeviceDao(this);
-            List<Device> devices = deviceDao.fetchAll();
-            for (Device device : devices) {
-                registeredDevices.add(device.getDeviceId());
-            }
-        }
-
-        GraphItApplication application = ((GraphItApplication)getApplicationContext());
-        connectionManager = application.getConnectionManager();
-
-        setProgressDialog();
-        progressDialog.show();
-    }
-
     private void setProgressDialog() {
         if(progressDialog == null)
             progressDialog = new ProgressDialog(this);
@@ -300,9 +282,9 @@ public class PlotActivity extends DrawerActivity {
 
     private void updateData(BluetoothDevice bluetoothDevice) {
         try {
-            ConnectionResouceBundle connectionResouceBundle = connectionManager.getConnectionResource(bluetoothDevice, getApplicationContext());
+            ConnectionResourceBundle connectionResourceBundle = connectionManager.getConnectionResource(bluetoothDevice, getApplicationContext());
 
-            ServerActionUtil serverActionUtil = new ServerActionUtil(connectionResouceBundle);
+            ServerActionUtil serverActionUtil = new ServerActionUtil(connectionResourceBundle);
 
             //aggregate file paths.
             DeviceSensorMapDao deviceSensorMapDao = new DeviceSensorMapDao(this);

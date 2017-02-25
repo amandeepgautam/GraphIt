@@ -7,5 +7,5 @@ import java.util.List;
  * Created by aman on 18/9/15.
  */
 public interface FileParser {
-    List<Measurement<Long, Float>> parse(byte [] input) throws IOException;
+    List<Measurement<Long, Float>> parseAndPrepareReadingRecords(byte[] input, String deviceId) throws IOException;
 }

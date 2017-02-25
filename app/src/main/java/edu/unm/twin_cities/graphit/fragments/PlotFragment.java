@@ -2,36 +2,33 @@ package edu.unm.twin_cities.graphit.fragments;
 
 
 import android.app.ProgressDialog;
-import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
 import android.graphics.Color;
-import android.graphics.Paint;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
-import android.support.v4.content.LocalBroadcastManager;
-import android.util.Log;
+import android.support.v4.content.ContextCompat;
+import android.util.Pair;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.FrameLayout;
+import android.widget.TextView;
 
-import com.github.mikephil.charting.charts.Chart;
+import com.dd.morphingbutton.MorphingButton;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.XAxis;
 import com.github.mikephil.charting.components.YAxis;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
+import com.github.mikephil.charting.utils.ColorTemplate;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
-
-import java.io.Serializable;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
@@ -41,23 +38,21 @@ import java.util.Random;
 import java.util.Set;
 
 import edu.unm.twin_cities.graphit.R;
-import edu.unm.twin_cities.graphit.activity.FileBrowserActivity;
-import edu.unm.twin_cities.graphit.application.GraphItApplication;
-import edu.unm.twin_cities.graphit.processor.DatabaseHelper;
-import edu.unm.twin_cities.graphit.processor.dao.DeviceDao;
-import edu.unm.twin_cities.graphit.processor.dao.DeviceSensorMapDao;
-import edu.unm.twin_cities.graphit.processor.model.Device;
-import edu.unm.twin_cities.graphit.processor.model.DeviceSensorMap;
+import edu.unm.twin_cities.graphit.activity.DrawerActivity.Fragments;
+import edu.unm.twin_cities.graphit.activity.DrawerActivity;
+import edu.unm.twin_cities.graphit.processor.dao.SensorTypeDao;
 import edu.unm.twin_cities.graphit.processor.model.PlotData;
+import edu.unm.twin_cities.graphit.processor.model.SensorType;
+import edu.unm.twin_cities.graphit.processor.model.UserPref;
 import edu.unm.twin_cities.graphit.rest.DataProvider;
-import edu.unm.twin_cities.graphit.rest.RandomDataProvider;
 import edu.unm.twin_cities.graphit.rest.SensorDataProvider;
-import edu.unm.twin_cities.graphit.service.DataService;
-import edu.unm.twin_cities.graphit.util.CommonUtils;
-import edu.unm.twin_cities.graphit.util.ConnectionResouceBundle;
-import edu.unm.twin_cities.graphit.util.Measurement;
-import edu.unm.twin_cities.graphit.util.RemoteConnectionResouceManager;
-import edu.unm.twin_cities.graphit.util.ServerActionUtil;
+import edu.unm.twin_cities.graphit.util.LineColor;
+import edu.unm.twin_cities.graphit.util.RemoteConnectionResourceManager;
+import edu.unm.twin_cities.graphit.util.UserPreferencesUtil;
+import fr.ganfra.materialspinner.MaterialSpinner;
+import lombok.Data;
+
+import static edu.unm.twin_cities.graphit.R.color.defaultTextColor;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -68,68 +63,22 @@ public class PlotFragment extends Fragment implements View.OnClickListener {
 
     private final int REQUEST_ENABLE_BT = 3;
 
-    Deque<BluetoothDevice> bluetoothDevices = new ArrayDeque<BluetoothDevice>();
+    private Deque<BluetoothDevice> bluetoothDevices = new ArrayDeque<BluetoothDevice>();
 
-    Set<String> registeredDevices = null;   //lazy initialization,
+    private Set<String> registeredDevices = null;   //lazy initialization,
 
-    List<BluetoothDevice> erroredOutDevices = Lists.newArrayList();
+    private List<BluetoothDevice> erroredOutDevices = Lists.newArrayList();
+    private DrawerActivity parentActivity;
 
-    private volatile boolean isDataTransfer = false;
-
-    private BroadcastReceiver bReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            String action = intent.getAction();
-
-            switch(action) {
-                case DataService.READINGS_DATA_INSERT_COMPLETE:
-                    boolean insertSuccessful = (boolean) intent.getExtras().get(DataService.PARAM_INSERT_COMPLETE);
-                    if (!insertSuccessful) {
-                        Log.i(TAG, "Cannot Transfer successfully.");
-                        //TODO: Handle error.
-                        //(String) intent.getExtras().get(FileBrowserActivity.PARAM_DEVICE_ID);
-                        //erroredOutDevices.add();
-                    }
-                    if (bluetoothDevices.isEmpty()) {
-                        progressDialog.dismiss();
-                        lineChart.notifyDataSetChanged();
-                    } else {
-                        BluetoothDevice bluetoothDevice = bluetoothDevices.pop();
-                        startTransferForNewDevice(bluetoothDevice);
-                    }
-                    break;
-                case BluetoothAdapter.ACTION_DISCOVERY_FINISHED:
-                    // If no more devices are in queue and discovery has finished, then dismiss the dialog
-                    if (bluetoothDevices.isEmpty() && !isDataTransfer) {
-                        progressDialog.dismiss();
-                        lineChart.notifyDataSetChanged();
-                    }
-                    break;
-                case BluetoothDevice.ACTION_FOUND:
-                    // If the device is found and there is no data transfer in progress, start the data
-                    // transfer for this device. If not, just add it to the queue.
-                    BluetoothDevice foundBtDevice = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-                    String address = foundBtDevice.getAddress();
-                    if (registeredDevices.contains(address)) {
-                        if (isDataTransfer) {
-                            bluetoothDevices.add(foundBtDevice);
-                        } else {
-                            startTransferForNewDevice(foundBtDevice);
-                        }
-                    }
-                    break;
-            }
-        }
-    };
-
-    RemoteConnectionResouceManager connectionManager = null; //lazy initialization.
+    RemoteConnectionResourceManager connectionManager = null; //lazy initialization.
 
     private ProgressDialog progressDialog = null;
     private LineChart lineChart;
+    private View fragmentView;
 
 
     public PlotFragment() {
-        // Required empty public constructor
+        setArguments(new Bundle());
     }
 
     @Override
@@ -143,29 +92,96 @@ public class PlotFragment extends Fragment implements View.OnClickListener {
     }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+    public View onCreateView(final LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
-        View fragmentView = inflater.inflate(R.layout.fragment_plot, container, false);
+        if (fragmentView == null) {
+            // Inflate the layout for this fragment
+            fragmentView = inflater.inflate(R.layout.fragment_plot, container, false);
 
-        lineChart = (LineChart) fragmentView.findViewById(R.id.chart);
+            parentActivity = (DrawerActivity) getActivity();
+            parentActivity.setTitle(R.string.plot_fragment_title);
 
-        //override listeners for button so that activity is not called onClick.
-        Button oneWeekGraphViewButton = (Button) fragmentView.findViewById(R.id.one_week_preset_button);
-        oneWeekGraphViewButton.setOnClickListener(this);
+            //override listeners for button so that activity is not called onClick.
+            MaterialSpinner sensorTypeSpinner = (MaterialSpinner) fragmentView.findViewById(R.id.sensor_type_selection);
+            final List<SensorType> sensorTypes = getSensorTypes();
+            CustomArrayAdapter customArrayAdapter = new CustomArrayAdapter(parentActivity,
+                    android.R.layout.simple_spinner_item, sensorTypes);
+            customArrayAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            sensorTypeSpinner.setAdapter(customArrayAdapter);
 
-        Button oneMonthGraphViewButton = (Button) fragmentView.findViewById(R.id.one_month_preset_button);
-        oneMonthGraphViewButton.setOnClickListener(this);
+            sensorTypeSpinner.setOnItemSelectedListener(
+                    new AdapterView.OnItemSelectedListener() {
+                        public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
+                            //0th position is a string and if it is selected nothing has to be done.
+                            System.out.println(pos);
+                            if (pos >= 0) {
+                                SensorType sensorType = (SensorType) parent.getItemAtPosition(pos);
+                                drawSubView(inflater, sensorType.getSensorTypeId());
+                            }
+                        }
 
-        Button defaultGraphViewButton = (Button) fragmentView.findViewById(R.id.default_view_preset_button);
-        defaultGraphViewButton.setOnClickListener(this);
+                        public void onNothingSelected(AdapterView<?> parent) {
+                            //Do nothing when nothing is selected.
+                        }
+                    });
 
-        setLineChart();
+            SensorType.SensorTypeID sensorTypeID = UserPreferencesUtil.getLastViewingSensorType(parentActivity);
+            if (sensorTypeID == null)
+                sensorTypeID = SensorType.SensorTypeID.SOIL_MOISTURE;
+            for(int i=0; i< sensorTypes.size(); ++i ) {
+                if (sensorTypes.get(i).getSensorTypeId() == sensorTypeID) {
+                    sensorTypeSpinner.setSelection(i);
+                    break;
+                }
+            }
 
+            drawSubView(inflater, sensorTypeID);
+        }
         return fragmentView;
     }
 
-    private void setLineChart() {
+    private void drawSubView(LayoutInflater inflater, SensorType.SensorTypeID sensorTypeID) {
+        DataProvider dataProvider = new SensorDataProvider(getActivity());
+        PlotData plotData = dataProvider.getData(sensorTypeID);
+
+        FrameLayout inclusionViewGroup = (FrameLayout) fragmentView.findViewById(R.id.chart_frame);
+
+        if (inclusionViewGroup.getChildCount() > 0)
+            inclusionViewGroup.removeAllViews();
+
+        if (!plotData.isEmpty()) {
+            View child = inflater.inflate(R.layout.chart_layout, null);
+            inclusionViewGroup.addView(child);
+            lineChart = (LineChart) child.findViewById(R.id.chart);
+
+/*                Button oneWeekGraphViewButton = (Button) child.findViewById(R.id.one_week_preset_button);
+                oneWeekGraphViewButton.setOnClickListener(this);
+
+                Button oneMonthGraphViewButton = (Button) child.findViewById(R.id.one_month_preset_button);
+                oneMonthGraphViewButton.setOnClickListener(this);
+
+                Button defaultGraphViewButton = (Button) child.findViewById(R.id.default_view_preset_button);
+                defaultGraphViewButton.setOnClickListener(this);
+*/
+            setLineChart(plotData);
+        } else {
+            View child = inflater.inflate(R.layout.no_data_view, null);
+            inclusionViewGroup.addView(child);
+
+            Button addDeviceButton = (MorphingButton) fragmentView.findViewById(R.id.add_new_device_btn);
+            addDeviceButton.setOnClickListener(this);
+
+            Button addSensorButton = (MorphingButton) fragmentView.findViewById(R.id.add_new_sensor_btn);
+            addSensorButton.setOnClickListener(this);
+        }
+    }
+
+    private List<SensorType> getSensorTypes() {
+        SensorTypeDao sensorTypeDao = new SensorTypeDao(parentActivity);
+        return sensorTypeDao.fetchAll();
+    }
+
+    private void setLineChart(PlotData plotData) {
         //enable zoom behaviour.
         lineChart.setTouchEnabled(true);
         lineChart.setDragEnabled(true);
@@ -176,8 +192,8 @@ public class PlotFragment extends Fragment implements View.OnClickListener {
         lineChart.setNoDataText(getResources().getString(R.string.no_data_message));
         lineChart.setNoDataTextDescription(getResources().getString(R.string.no_data_next_action));
 
-        Paint p = lineChart.getPaint(Chart.PAINT_INFO);
-        p.setColor(Color.WHITE);
+        //Paint p = lineChart.getPaint(Chart.PAINT_INFO);
+        //p.setColor(Color.WHITE);
         //p.setTypeface(...);
         //p.setTextSize(...);
 
@@ -190,27 +206,28 @@ public class PlotFragment extends Fragment implements View.OnClickListener {
         //p1.setColor(Color.RED);
 
         lineChart.getLegend().setWordWrapEnabled(true);
-        lineChart.getLegend().setTextColor(Color.WHITE);
+        lineChart.getLegend().setTextColor(Color.BLACK);
         //lineChart.setVisibleXRange(1);
         //lineChart.moveViewToX();
 
-        setAxisProperties(lineChart);
+        setChartAxisProperties(lineChart);
+        setChartColorProperties(lineChart);
 
-        DataProvider dataProvider = new RandomDataProvider(getActivity());
-        //DataProvider dataProvider = new SensorDataProvider(getActivity());
-        PlotData plotData = dataProvider.getData();
-
+        //DataProvider dataProvider = new RandomDataProvider(getActivity());
         ArrayList<LineDataSet> dataSet = Lists.newArrayList();
-        for (Map.Entry<String, List<Entry>> elem : plotData.getData().entrySet()) {
+        LineColor lineColor = new LineColor();
+        for (Map.Entry<Pair<String, String>, List<Entry>> elem : plotData.getData().entrySet()) {
             //generate a random color. Hope that it would not clash,if things are truely random.
-            Random rnd = new Random();
-            int color = Color.argb(255, rnd.nextInt(256), rnd.nextInt(256), rnd.nextInt(256));
+            int color = lineColor.getNextColor();
+            Pair<String, String> id = elem.getKey();
+            //Note that sensor name for display has to be unique and can be used as a key.
+            String sensorName = getFormattedSensorName(id.first, id.second);
 
-            LineDataSet lineDataSet = new LineDataSet(elem.getValue(), elem.getKey());
+            LineDataSet lineDataSet = new LineDataSet(elem.getValue(), sensorName);
             lineDataSet.setDrawValues(false);   //removes the values adjacent to point in graph.
             lineDataSet.setColor(color);
             lineDataSet.setCircleColor(color);
-            lineDataSet.setCircleSize(1f);
+            lineDataSet.setCircleSize(2f);
 
             dataSet.add(lineDataSet);
         }
@@ -222,102 +239,29 @@ public class PlotFragment extends Fragment implements View.OnClickListener {
         lineChart.animateXY(1000, 1000);
     }
 
-    private void setAxisProperties(LineChart lineChart) {
+    private void setChartAxisProperties(LineChart lineChart) {
         XAxis xAxis = lineChart.getXAxis();
-        xAxis.setTextColor(Color.WHITE);
+        xAxis.setTextColor(Color.BLACK);
+        xAxis.setGridColor(Color.BLACK);
         xAxis.setDrawGridLines(false);
         xAxis.setAvoidFirstLastClipping(true);
         xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
 
         YAxis leftAxis = lineChart.getAxisLeft();
         leftAxis.setDrawGridLines(true);
-        leftAxis.setTextColor(Color.WHITE);
+        leftAxis.setTextColor(Color.BLACK);
+        leftAxis.setGridColor(Color.BLACK);
 
         YAxis rightAxis = lineChart.getAxisRight();
         rightAxis.setEnabled(false);
     }
 
-    public void updateGraph(View view) {
-        CommonUtils.startBluetoothDiscovery(getActivity(), REQUEST_ENABLE_BT, bReceiver);
-        // Note that the following logic might change depending on how registration
-        // of device is done. The following piece is good until when this activity is
-        // destroyed when a new device is registered.
-        if (registeredDevices == null) {
-            registeredDevices = Sets.newHashSet();
-            DeviceDao deviceDao = new DeviceDao(getActivity());
-            List<Device> devices = deviceDao.fetchAll();
-            for (Device device : devices) {
-                registeredDevices.add(device.getDeviceId());
-            }
-        }
-
-        GraphItApplication application = ((GraphItApplication) getActivity().getApplicationContext());
-        connectionManager = application.getConnectionManager();
-
-        setProgressDialog();
-        progressDialog.show();
+    public void setChartColorProperties(LineChart lineChart) {
+        lineChart.setDescriptionColor(Color.BLUE);
     }
 
-    private void setProgressDialog() {
-        if(progressDialog == null)
-            progressDialog = new ProgressDialog(getActivity());
-        progressDialog.setTitle(R.string.please_wait_message);
-        progressDialog.setMessage(getResources().getString(R.string.scanning_for_devices));
-        progressDialog.setCancelable(false);
-    }
-
-    private void updateData(BluetoothDevice bluetoothDevice) {
-        try {
-            ConnectionResouceBundle connectionResouceBundle = connectionManager.getConnectionResource(bluetoothDevice, getActivity().getApplicationContext());
-
-            ServerActionUtil serverActionUtil = new ServerActionUtil(connectionResouceBundle);
-
-            //aggregate file paths.
-            DeviceSensorMapDao deviceSensorMapDao = new DeviceSensorMapDao(getActivity());
-            Map<String, String> constraint = Maps.newHashMap();
-            constraint.put(DatabaseHelper.Fields.DEVICE_ID.getFieldName(), bluetoothDevice.getAddress());
-            List<DeviceSensorMap> deviceSensorMaps = deviceSensorMapDao.fetchWithConstraints(constraint);
-            Set<String> filePaths = Sets.newHashSet();
-            for (DeviceSensorMap deviceSensorMap : deviceSensorMaps) {
-                filePaths.add(deviceSensorMap.getSensorFileLocation());
-            }
-
-            //get each file.
-            //TODO: Test this with multiple files.
-            for (String filePath : filePaths) {
-                List<Measurement<Long, Float>> collection = serverActionUtil.transferFile(filePath);
-                if (collection != null) {
-                    Intent intent = new Intent(getActivity(), DataService.class);
-                    intent.setAction(FileBrowserActivity.ACTION_INSERT_READINGS_DATA);
-                    intent.putExtra(FileBrowserActivity.PARAM_SENSOR_DATA, (Serializable) collection);
-                    intent.putExtra(FileBrowserActivity.PARAM_DEVICE_ID, bluetoothDevice.getAddress());     //wierd that it can throw NPE here.
-
-                    //register a local broadcast.
-                    LocalBroadcastManager localBroadcastManager = LocalBroadcastManager.getInstance(getActivity());
-                    IntentFilter intentFilter = new IntentFilter();
-                    intentFilter.addAction(DataService.READINGS_DATA_INSERT_COMPLETE);
-                    localBroadcastManager.registerReceiver(bReceiver, intentFilter);
-
-                    getActivity().startService(intent);
-                }
-            }
-        } catch(Exception e) {
-            Log.e(TAG, "Exception while transsfer file component of updating graphs." ,e);
-        }
-
-    }
-
-    /**
-     * Start the transfer of a new device putting new message on ProcessDialog.
-     * @param bluetoothDevice
-     */
-    private void startTransferForNewDevice(BluetoothDevice bluetoothDevice) {
-        String identifier = bluetoothDevice.getName();
-        if (identifier == null)
-            identifier = bluetoothDevice.getAddress();
-        String msg = String.format(getResources().getString(R.string.data_transfer_message), identifier);
-        progressDialog.setMessage(msg);
-        updateData(bluetoothDevice);
+    private String getFormattedSensorName(String deviceId, String sensorId) {
+        return sensorId + "(" + deviceId + ")";
     }
 
     public void setOneWeekAxisView(View view) {
@@ -354,6 +298,7 @@ public class PlotFragment extends Fragment implements View.OnClickListener {
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
+/*          UNCOMMENT WHEN YOU ADD MULTIPLE SCALE VIEWS.
             case R.id.one_month_preset_button:
                 setOneMonthAxisView(v);
                 break;
@@ -363,8 +308,52 @@ public class PlotFragment extends Fragment implements View.OnClickListener {
             case R.id.default_view_preset_button:
                 setOneMonthAxisView(v);
                 break;
+*/            case R.id.add_new_device_btn:
+                parentActivity.loadFragment(Fragments.ADD_DEVICE, null, false);
+                break;
+            case R.id.add_new_sensor_btn:
+                parentActivity.loadFragment(Fragments.ADD_SENSOR, null, false);
+                break;
             default:
                 break;
+        }
+    }
+
+    @Data
+    private class CustomArrayAdapter extends ArrayAdapter<SensorType> {
+
+        private List<SensorType> sensorTypes;
+        //private Context context;
+
+        public CustomArrayAdapter(Context context, int resourceId,
+                                   List<SensorType> sensorTypes) {
+            super(context, resourceId, sensorTypes);
+            this.sensorTypes = sensorTypes;
+        }
+
+        @Override
+        public View getDropDownView(int position, View convertView,
+                                    ViewGroup parent) {
+            return getCustomView(position, convertView, parent, true);
+        }
+
+        @Override
+        public View getView(int position, View convertView, ViewGroup parent) {
+            return getCustomView(position, convertView, parent, false);
+        }
+
+        public View getCustomView(int position, View convertView, ViewGroup parent, boolean isDropDownView) {
+            //TODO: use convert view.
+            LayoutInflater inflater = (LayoutInflater) getActivity()
+                    .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+            final int resid = isDropDownView ? android.R.layout.simple_spinner_dropdown_item : android.R.layout.simple_spinner_item;
+            TextView row = (TextView) inflater.inflate(resid, parent, false);
+            row.setText(sensorTypes.get(position).getSensorTypeLabel());
+
+            //Hack: Cannot set the dialogs color from XML and text color from XML
+            row.setTextColor(ContextCompat.getColor(parentActivity, R.color.black));
+            parent.setBackgroundColor(ContextCompat.getColor(parentActivity, R.color.colorSecondary));
+            return row;
         }
     }
 }

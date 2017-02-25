@@ -3,20 +3,16 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
+    android:paddingLeft="@dimen/application_layout_left_padding"
+    android:paddingRight="@dimen/application_layout_right_padding"
     tools:context="edu.unm.twin_cities.graphit.fragments.AddDeviceFragment">
 
-    <ListView
+    <ExpandableListView
         android:id="@+id/new_discovered_device_list"
+        android:layout_height="match_parent"
         android:layout_width="match_parent"
-        android:layout_height="0dip"
-        android:layout_weight="1"/>
+        android:layout_marginTop="@dimen/list_view_margin_top"/>
+
     <!--Use this setting for syncing it below.android:layout_height="0dp"
     android:layout_weight="1" -->
-
-    <Button
-        android:id="@+id/refresh_list_btn"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:visibility="gone"
-        android:text="@string/scan_again"/>
 </LinearLayout>

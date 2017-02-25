@@ -24,33 +24,80 @@
     <string name="title_activity_drawer">DrawerActivity</string>
     <string name="graph_label">Sensor Data</string>
 
-    <string-array name="nav_actions">
-        <item>Add a device</item>
-        <item>Add a sensor</item>
-        <item>Update Graph</item>
-    </string-array>
-
     <string name="please_wait_message">Please wait while we update the graph</string>
     <string name="scanning_for_devices">Scanning for available devices</string>
     <string name="data_transfer_message">Transferring data from device: %1$s for all sensors attached.</string>
 
-    <string name="no_data_message">Data unavailable</string>
-    <string name="no_data_next_action">Consider adding new devices/sensors and download data</string>
+    <string name="no_data_message">No data present.</string>
+    <string name="no_data_next_action">Consider</string>
+    <string name="plot_fragment_action_option">Or</string>
 
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
 
-    <string name="device_name">Name of the device:</string>
+    <string name="device_name">Device Name</string>
+    <string name="error_msg_no_device_name">Please enter name of the device.</string>
+    <string name="hint_device_name">Name of the device</string>
     <string name="device_id">Device identifier:</string>
-    <string name="device_file_location">Default file location</string>
+    <string name="device_file_location">Sensor Data file location</string>
+    <string name="no_file_selected_help_text">No file selected. Browse to select a file.</string>
+    <string name="device_file_location_default_text">Please select a file by browsing.</string>
 
     <string name="sensor_type">Sensor Type:</string>
-    <string name="attached_device">Device connected to:</string>
-    <string name="sensor_name">Sensor Name</string>
+    <string name="sensor_type_select">Select the type of sensor</string>
+    <string name="attached_device">Attached device:</string>
+    <string name="attached_device_select">Select a device for the sensor</string>
 
-    <string name="browse">Browse</string>
-    <string name="scan_again">Scan Again</string>
+    <string name="browse">BROWSE</string>
 
-    <string name="add_device_fragment_scanning_title">Scanning for Devices&#8230;</string>
+    <string name="add_device_fragment_scanning_title">Scanning for devices</string>
     <string name="add_device_fragment_available_title">Available Devices</string>
+
+    <string name="add_device_fragment_device_name">Name</string>
+    <string name="add_device_fragment_save_device_info">Save device</string>
+
+    <string name="sensor_name">Sensor Name</string>
+    <string name="hint_sensor_name">Enter a sensor name</string>
+
+    <string name="hint_file_location">Tap to select sensor data file</string>
+    <string name="file_location">File location (tap again to edit)</string>
+
+    <string name="file_browser_fragment_title">Select sensor data file &#8230;</string>
+    <string name="add_sensor_fragment_title">Add a sensor</string>
+    <string name="update_graph_fragment_title">Update Sensor Data</string>
+
+    <string name="last_modified_text">Last modified:\u0020</string>
+
+    <string name="error_msg_valid_device_selection">Please select a valid device from the dropdown.</string>
+    <string name="error_msg_no_device_present">Please add a device and then add a sensor to the device.</string>
+    <string name="error_msg_no_sensor_name">Please enter name of the sensor.</string>
+    <string name="error_msg_no_file_path">Please select a file which contain sensor data.</string>
+    <string name="error_msg_no_sensor_type">Please select a valid sensor type</string>
+
+    <string name="connection_msg">Connecting to device &#8230;</string>
+    <string name="connection_detail_msg">Please wait while we fetch data.</string>
+
+    <string name="updating_data">Please wait while we are updating the data</string>
+
+    <string name="menuitem_refresh">Refresh menu</string>
+    <string name="update_selected_devices">Update selected devices</string>
+    <string name="save_sensor_info_btn">Save</string>
+    <string name="device_address_help_text">Device address:\u0020</string>
+
+    <string name="sensor_type_selection_prefix">Currently viewing</string>
+    <string name="sensor_type_selection_suffix">sensors</string>
+
+    <string name="plot_fragment_title">Sensor Data</string>
+
+    <string name="add_new_device_plot_fragment_btn">Add new device</string>
+    <string name="add_new_sensor_plot_fragment_btn">Add a new sensor</string>
+
+    <string name="drawer_open">Open navigation drawer</string>
+    <string name="drawer_close">Close navigation drawer</string>
+
+    <string name="welcome_msg">Welcome!</string>
+    <string name="nav_item_add_new_device">Add new device</string>
+    <string name="nav_item_add_new_sensor">Add new sensor</string>
+    <string name="nav_item_download_data">Download new data!</string>
+    <string name="nav_item_graphs_visualizations">Graphs</string>
 </resources>

@@ -38,5 +38,14 @@ dependencies {
     compile 'commons-codec:commons-codec:1.10'
     compile 'com.android.support:design:23.1.1'
     compile 'com.android.support:support-v4:23.1.1'
-    compile 'com.google.android.gms:play-services-appindexing:8.1.0'
+    compile 'com.google.android.gms:play-services-appindexing:8.3.0'
+    compile 'org.solovyev.android.views:linear-layout-manager:0.5@aar'
+    compile 'com.github.ganfra:material-spinner:1.1.1'
+    compile 'com.rengwuxian.materialedittext:library:2.0.3'
+    compile 'com.github.d-max:spots-dialog:0.4@aar'
+    compile 'com.github.dmytrodanylyk:android-morphing-button:98a4986e56'
+    compile 'com.hanks.animatecheckbox:library:0.1'
+    compile('com.github.afollestad.material-dialogs:core:0.8.5.3@aar') {
+        transitive = true
+    }
 }

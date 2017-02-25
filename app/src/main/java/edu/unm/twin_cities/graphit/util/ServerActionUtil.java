@@ -13,12 +13,12 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
 import java.util.List;
 
 import edu.umn.twin_cities.ErrorCode;
 import edu.umn.twin_cities.FileAdapter;
 import edu.umn.twin_cities.ServerAction;
+import edu.unm.twin_cities.graphit.fragments.FileBrowserFragment;
 
 /**
  * Created by aman on 30/11/15.
@@ -26,16 +26,16 @@ import edu.umn.twin_cities.ServerAction;
 public class ServerActionUtil {
 
     private final String TAG = this.getClass().getSimpleName();
-    private ConnectionResouceBundle connectionResouceBundle;
+    private ConnectionResourceBundle connectionResourceBundle;
 
-    public ServerActionUtil(ConnectionResouceBundle connectionResouceBundle) {
-        this.connectionResouceBundle = connectionResouceBundle;
+    public ServerActionUtil(ConnectionResourceBundle connectionResourceBundle) {
+        this.connectionResourceBundle = connectionResourceBundle;
     }
 
-    public List<FileAdapter> listFiles(String path) throws ClassNotFoundException, IOException {
+    public List<FileBrowserFragment.FileInfo> listFiles(String path) throws ClassNotFoundException, IOException {
         try {
-            ObjectOutputStream objectOutputStream = connectionResouceBundle.getObjectOutputStream();
-            ObjectInputStream objectInputStream = connectionResouceBundle.getObjectInputStream();
+            ObjectOutputStream objectOutputStream = connectionResourceBundle.getObjectOutputStream();
+            ObjectInputStream objectInputStream = connectionResourceBundle.getObjectInputStream();
 
             objectOutputStream.writeObject(ServerAction.LIST_FILES_IN_DIR);
             objectOutputStream.writeObject(path);
@@ -50,7 +50,11 @@ public class ServerActionUtil {
             } else {
                 throw new IllegalStateException("Unrecognized object sent by the server.");
             }
-            return Arrays.asList(files);
+            List<FileBrowserFragment.FileInfo> fileInfo = Lists.newArrayListWithCapacity(files.length);
+            for (FileAdapter fileAdapter : files) {
+                fileInfo.add(new FileBrowserFragment.FileInfo(fileAdapter));
+            }
+            return fileInfo;
         } catch (EOFException eofe) {
             /**Excpected when the remote closes the stream and there is nothing more to read.
              * Igonre this exception.**/
@@ -60,8 +64,8 @@ public class ServerActionUtil {
 
     public List<Measurement<Long, Float>> transferFile(String path) throws IOException, ClassNotFoundException {
         try {
-            ObjectOutputStream objectOutputStream = connectionResouceBundle.getObjectOutputStream();
-            ObjectInputStream objectInputStream = connectionResouceBundle.getObjectInputStream();
+            ObjectOutputStream objectOutputStream = connectionResourceBundle.getObjectOutputStream();
+            ObjectInputStream objectInputStream = connectionResourceBundle.getObjectInputStream();
 
             objectOutputStream.writeObject(ServerAction.TRANSFER_FILE);
             objectOutputStream.writeObject(path);
@@ -100,9 +104,10 @@ public class ServerActionUtil {
 
             if (fileContents.length != 0) {
                 FileParser parser = new FileParserImpl();
-                return parser.parse(fileContents);
+                return parser.parseAndPrepareReadingRecords(fileContents,
+                        connectionResourceBundle.getResourceIdentifier());
             } else {
-                return null;
+                return Lists.newArrayList();
             }
         } catch (NoSuchAlgorithmException nsae) {
             throw new IllegalStateException("Could not get Algorithm to calcuate checksum");
@@ -115,8 +120,8 @@ public class ServerActionUtil {
 
     public boolean ping() {
         try {
-            ObjectOutputStream objectOutputStream = connectionResouceBundle.getObjectOutputStream();
-            ObjectInputStream objectInputStream = connectionResouceBundle.getObjectInputStream();
+            ObjectOutputStream objectOutputStream = connectionResourceBundle.getObjectOutputStream();
+            ObjectInputStream objectInputStream = connectionResourceBundle.getObjectInputStream();
             objectOutputStream.writeObject(ServerAction.PING);
             objectOutputStream.flush();
             objectInputStream.readObject(); //ignore what is returned,

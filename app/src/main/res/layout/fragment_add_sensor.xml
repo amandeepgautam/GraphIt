@@ -2,46 +2,96 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     tools:context="edu.unm.twin_cities.graphit.fragments.AddSensorFragment">
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical">
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/sensor_name" />
-        <EditText
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:id="@+id/sensor_name_value" />
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/attached_device" />
-        <EditText
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:id="@+id/attached_device_value" />
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/sensor_type" />
-        <EditText
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:id="@+id/sensor_type_value" />
+    <ScrollView
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent">
         <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content">
-            <Button
-                android:id="@+id/save_sensor_button"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Save Sensor Information"/>
-        </LinearLayout>
-    </LinearLayout>
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:focusableInTouchMode="true"
+            android:orientation="vertical"
+            android:paddingLeft="@dimen/application_layout_left_padding"
+            android:paddingRight="@dimen/application_layout_right_padding">
 
+            <com.rengwuxian.materialedittext.MaterialEditText
+                android:id="@+id/sensor_name_value"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/hint_sensor_name"
+                android:textAppearance="?android:attr/textAppearanceMedium"
+                android:paddingTop="@dimen/text_view_padding_top"
+                android:layout_marginTop="@dimen/separate_subgroup_margin"
+                app:met_floatingLabel="normal"
+                app:met_floatingLabelText="@string/sensor_name"
+                app:met_singleLineEllipsis="true"
+                app:met_floatingLabelTextColor="@color/black"
+                app:met_textColorHint="@color/light_grey"
+                app:met_primaryColor="@color/material_grey"
+                app:met_textColor="@color/black"
+                app:met_underlineColor="@color/material_grey" />
+
+            <fr.ganfra.materialspinner.MaterialSpinner
+                android:id="@+id/attached_device_value_dropdown"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:textAppearance="?android:attr/textAppearanceMedium"
+                android:spinnerMode="dialog"
+                app:ms_alignLabels="false"
+                app:ms_arrowSize="@dimen/spinner_arrow_size"
+                app:ms_hint="@string/attached_device_select"
+                app:ms_enableErrorLabel="true"
+                app:ms_multiline="true"
+                app:ms_floatingLabelColor="@color/black"
+                app:ms_hintColor="@color/light_grey"
+                app:ms_baseColor="@color/black"
+                app:ms_highlightColor="@color/black"
+                app:ms_arrowColor="@color/black"/>
+
+            <fr.ganfra.materialspinner.MaterialSpinner
+                android:id="@+id/sensor_type_value_dropdown"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:textAppearance="?android:attr/textAppearanceMedium"
+                android:spinnerMode="dialog"
+                app:ms_alignLabels="false"
+                app:ms_arrowSize="@dimen/spinner_arrow_size"
+                app:ms_hint="@string/sensor_type_select"
+                app:ms_enableErrorLabel="true"
+                app:ms_multiline="true"
+                app:ms_floatingLabelColor="@color/black"
+                app:ms_baseColor="@color/black"
+                app:ms_hintColor="@color/light_grey"
+                app:ms_highlightColor="@color/black"
+                app:ms_arrowColor="@color/black"/>
+
+            <com.rengwuxian.materialedittext.MaterialEditText
+                android:id="@+id/device_file_location_value"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/hint_file_location"
+                android:textAppearance="?android:attr/textAppearanceMedium"
+                android:enabled="true"
+                android:focusable="false"
+                android:clickable="true"
+                android:textCursorDrawable="@drawable/cursor_color"
+                app:met_floatingLabel="normal"
+                app:met_floatingLabelText="@string/file_location"
+                app:met_singleLineEllipsis="true"
+                app:met_floatingLabelTextColor="@color/black"
+                app:met_textColorHint="@color/light_grey"
+                app:met_primaryColor="@color/material_grey"
+                app:met_textColor="@color/black"
+                app:met_underlineColor="@color/material_grey"/>
+
+            <com.dd.morphingbutton.MorphingButton
+                android:id="@+id/save_sensor_button"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/save_sensor_info_btn"/>
+
+        </LinearLayout>
+    </ScrollView>
 </FrameLayout>

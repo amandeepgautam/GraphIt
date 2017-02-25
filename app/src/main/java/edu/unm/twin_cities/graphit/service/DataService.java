@@ -57,13 +57,10 @@ public class DataService extends IntentService {
             for (Measurement measurement : data) {
                 String sensorId = measurement.getSensorIdentifier();
                 List<Pair<Long, Float>> sensorReadings = measurement.getMeasurement();
-                Sensor sensor = new Sensor(deviceId, sensorId, SensorType.SensorTypeID.DEFAULT, System.currentTimeMillis());
-                //TODO: Make this a transaction.
-                SensorDao sensorDao = new SensorDao(this);
-                sensorDao.insert(sensor);
                 ReadingDao readingDao = new ReadingDao(this);
                 for (Pair<Long, Float> pair : sensorReadings) {
-                    readingDao.insert(new Reading(sensorId, pair.second, pair.first));
+                    throw new IllegalStateException("Should not be called");
+                    //readingDao.insert(new Reading(sensorId, pair.second, pair.first));
                 }
             }
         } catch (Exception e) {
@@ -74,6 +71,6 @@ public class DataService extends IntentService {
         Intent notificationIntent = new Intent(READINGS_DATA_INSERT_COMPLETE);
         notificationIntent.putExtra(PARAM_INSERT_COMPLETE, isSuccessful);
         notificationIntent.putExtra(FileBrowserActivity.PARAM_DEVICE_ID, deviceId);
-        LocalBroadcastManager.getInstance(this).sendBroadcast(notificationIntent);
+        sendBroadcast(notificationIntent);
     }
 }

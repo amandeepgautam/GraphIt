@@ -1,0 +1,31 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingLeft="@dimen/application_layout_left_padding"
+    android:paddingRight="@dimen/application_layout_right_padding"
+    android:orientation="vertical">
+
+    <com.rengwuxian.materialedittext.MaterialEditText
+        android:id="@+id/device_name_text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="@string/hint_device_name"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:layout_marginTop="@dimen/separate_subgroup_margin"
+        app:met_floatingLabel="normal"
+        app:met_floatingLabelText="@string/device_name"
+        app:met_singleLineEllipsis="true"
+        app:met_floatingLabelTextColor="@color/black"
+        app:met_textColorHint="@color/light_grey"
+        app:met_primaryColor="@color/material_grey"
+        app:met_textColor="@color/black"
+        app:met_underlineColor="@color/material_grey"/>
+
+    <com.dd.morphingbutton.MorphingButton
+        android:id="@+id/save_device_info_button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/add_device_fragment_save_device_info"/>
+
+</LinearLayout>

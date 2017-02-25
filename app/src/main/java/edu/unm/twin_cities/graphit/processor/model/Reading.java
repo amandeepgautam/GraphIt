@@ -10,7 +10,12 @@ import lombok.Data;
 @AllArgsConstructor(suppressConstructorProperties = true)
 public class Reading {
     /**
-     * The identifier for device.
+     * The identifier for a device to which sensor is attached.
+     */
+    private String deviceId;
+
+    /**
+     * The identifier for sensor in a device.
      */
     private String sensorId;
 
@@ -22,7 +27,7 @@ public class Reading {
     /**
      * Unit of measurement.
      */
-    private String measurementUnit;
+    private SensorType.MeasurementUnit measurementUnit;
 
     /**
      * Time of the reading.
@@ -32,7 +37,7 @@ public class Reading {
     /**
      * Constructor excluding the auto inc. id
      */
-    public Reading(String deviceId, float reading, long timestamp) {
-        this(deviceId, reading, null, timestamp);
+    public Reading(String deviceId, String sensorId, float reading, long timestamp) {
+        this(deviceId, sensorId, reading, null, timestamp);
     }
 }

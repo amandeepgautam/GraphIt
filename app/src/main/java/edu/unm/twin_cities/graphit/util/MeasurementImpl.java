@@ -21,18 +21,18 @@ public class MeasurementImpl implements Measurement<Long, Float>, Serializable {
     /**
      * Location of the sensor, while it took the reading.
      */
-    private String location;
+    private String deviceId;
 
-    private String sensorName;
+    private String sensorId;
 
     /**
      * Map of Sensor name and the readings it took
      */
     private List<Pair<Long, Float>> timeStampReadingTuple;
 
-    public MeasurementImpl(String location, String sensorName) {
-        this.location = location;
-        this.sensorName = sensorName;
+    public MeasurementImpl(String deviceId, String sensorName) {
+        this.deviceId = deviceId;
+        this.sensorId = sensorName;
         timeStampReadingTuple = Lists.newArrayList();
     }
 
@@ -46,12 +46,12 @@ public class MeasurementImpl implements Measurement<Long, Float>, Serializable {
 
     @Override
     public String getSensorIdentifier() {
-        return sensorName + "@ " + location;
+        return sensorId + "(" + deviceId + ")";
     }
 
     private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
-        location = (String) in.readObject();
-        sensorName = (String) in.readObject();
+        deviceId = (String) in.readObject();
+        sensorId = (String) in.readObject();
         int size = (int) in.readObject();
         timeStampReadingTuple = Lists.newArrayListWithCapacity(size);
         for(int i=0; i<size; ++i) {
@@ -62,8 +62,8 @@ public class MeasurementImpl implements Measurement<Long, Float>, Serializable {
     }
 
     private void writeObject(java.io.ObjectOutputStream out) throws IOException {
-        out.writeObject(location);
-        out.writeObject(sensorName);
+        out.writeObject(deviceId);
+        out.writeObject(sensorId);
         out.writeObject(timeStampReadingTuple.size());
         for(Pair<Long, Float> pair : timeStampReadingTuple) {
             out.writeObject(pair.first);

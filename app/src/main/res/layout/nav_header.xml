@@ -1,0 +1,18 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="192dp"
+    android:background="@color/colorPrimary"
+    android:padding="@dimen/nav_drawer_padding"
+    android:theme="@style/ThemeOverlay.AppCompat.Dark"
+    android:color="@color/colorSecondary"
+    android:orientation="vertical"
+    android:gravity="bottom">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/welcome_msg"
+        android:textColor="@android:color/white"
+        android:textAppearance="?android:attr/textAppearanceMedium"/>
+
+</LinearLayout>

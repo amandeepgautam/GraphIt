@@ -39,10 +39,11 @@ import edu.umn.twin_cities.FileAdapter;
 import edu.umn.twin_cities.FileAdapter.ResourceType;
 import edu.unm.twin_cities.graphit.R;
 import edu.unm.twin_cities.graphit.application.GraphItApplication;
+import edu.unm.twin_cities.graphit.fragments.FileBrowserFragment;
 import edu.unm.twin_cities.graphit.util.Measurement;
 import edu.unm.twin_cities.graphit.service.DataService;
-import edu.unm.twin_cities.graphit.util.ConnectionResouceBundle;
-import edu.unm.twin_cities.graphit.util.RemoteConnectionResouceManager;
+import edu.unm.twin_cities.graphit.util.ConnectionResourceBundle;
+import edu.unm.twin_cities.graphit.util.RemoteConnectionResourceManager;
 import edu.unm.twin_cities.graphit.util.ImageLoader;
 import edu.unm.twin_cities.graphit.util.ServerActionUtil;
 import lombok.AllArgsConstructor;
@@ -67,7 +68,7 @@ public class FileBrowserActivity extends AppCompatActivity {
 
     public static final String PARAM_SENSOR_DATA = "sensor_data";
     public static final String PARAM_DEVICE_ID = "device_id";
-    public static final String ACTION_INSERT_READINGS_DATA = "insert_reasings_data";
+    public static final String ACTION_INSERT_READINGS_DATA = "insert_readings_data";
 
     private final int CACHE_SIZE = 10;
     private final String TAG = this.getClass().getSimpleName();
@@ -75,12 +76,12 @@ public class FileBrowserActivity extends AppCompatActivity {
     private ServerActionUtil serverActionUtil = null;
     private FileArrayAdapter fileArrayAdapter;
 
-    LoadingCache<String, List<FileAdapter>> browserCache = CacheBuilder.newBuilder()
+    LoadingCache<String, List<FileBrowserFragment.FileInfo>> browserCache = CacheBuilder.newBuilder()
             .maximumSize(CACHE_SIZE)
             .build(
-                    new CacheLoader<String, List<FileAdapter>>() {
+                    new CacheLoader<String, List<FileBrowserFragment.FileInfo>>() {
                         @Override
-                        public List<FileAdapter> load(String key) throws Exception {
+                        public List<FileBrowserFragment.FileInfo> load(String key) throws Exception {
                             return serverActionUtil.listFiles(key);
                         }
                     }
@@ -107,7 +108,7 @@ public class FileBrowserActivity extends AppCompatActivity {
                 if (parentStack.size() > 1) {
                     try {
                         parentStack.pop();
-                        List<FileAdapter> files = browserCache.get(parentStack.peek());
+                        List<FileBrowserFragment.FileInfo> files = browserCache.get(parentStack.peek());
                         fileArrayAdapter.clear();
                         fileArrayAdapter.addAll(files);
                     } catch (ExecutionException ee) {
@@ -120,14 +121,14 @@ public class FileBrowserActivity extends AppCompatActivity {
         final BluetoothDevice bluetoothDevice = (BluetoothDevice) getIntent().getExtras().get(BluetoothScanner.PARAM_BLUETOOTH_DEVICE);
         try {
             GraphItApplication application = ((GraphItApplication)getApplicationContext());
-            RemoteConnectionResouceManager connectionManager = application.getConnectionManager();
+            RemoteConnectionResourceManager connectionManager = application.getConnectionManager();
 
-            ConnectionResouceBundle connectionResouceBundle = connectionManager.getConnectionResource(bluetoothDevice, getApplicationContext());
+            ConnectionResourceBundle connectionResourceBundle = connectionManager.getConnectionResource(bluetoothDevice, getApplicationContext());
 
-            serverActionUtil = new ServerActionUtil(connectionResouceBundle);
+            serverActionUtil = new ServerActionUtil(connectionResourceBundle);
 
             ListView listView = (ListView) findViewById(R.id.files);
-            fileArrayAdapter = new FileArrayAdapter(this, R.layout.resource_info, new ArrayList<FileAdapter>());
+            fileArrayAdapter = new FileArrayAdapter(this, R.layout.resource_info, new ArrayList<FileBrowserFragment.FileInfo>());
             fileArrayAdapter.setNotifyOnChange(true);
             listView.setAdapter(fileArrayAdapter);
 
@@ -139,7 +140,7 @@ public class FileBrowserActivity extends AppCompatActivity {
                         FileAdapter file = (FileAdapter) parent.getItemAtPosition(position);
                         if (file.getResourceType() == ResourceType.DIRECTORY) {
                             String path = file.getPath();
-                            List<FileAdapter> files = browserCache.get(path);
+                            List<FileBrowserFragment.FileInfo> files = browserCache.get(path);
                             parentStack.push(path);
                             fileArrayAdapter.clear();
                             fileArrayAdapter.addAll(files);
@@ -180,7 +181,7 @@ public class FileBrowserActivity extends AppCompatActivity {
 
             //Send a empty path. Server should return the default accessible location.
             String path = "/";
-            List<FileAdapter> files = browserCache.get(path);
+            List<FileBrowserFragment.FileInfo> files = browserCache.get(path);
             parentStack.push(path);
             toolBarTitle.setText(path);
 
@@ -241,12 +242,12 @@ public class FileBrowserActivity extends AppCompatActivity {
     /**
      * A custom adapter to browse files from other device.
      */
-    private class FileArrayAdapter extends ArrayAdapter<FileAdapter> {
+    private class FileArrayAdapter extends ArrayAdapter<FileBrowserFragment.FileInfo> {
 
-        private List<FileAdapter> rows;
+        private List<FileBrowserFragment.FileInfo> rows;
 
         FileArrayAdapter(Context context, int resourceId,
-                         List<FileAdapter> rows) {
+                         List<FileBrowserFragment.FileInfo> rows) {
             super(context, resourceId, rows);
             this.rows = rows;
         }
@@ -276,7 +277,7 @@ public class FileBrowserActivity extends AppCompatActivity {
             }
 
             //change the data to reflect the new row.
-            FileAdapter file = rows.get(position);
+            FileBrowserFragment.FileInfo file = rows.get(position);
             resourceName.setText(file.getName());
             SimpleDateFormat simpleDateFormat= new SimpleDateFormat("yyyy MM dd HH:mm:ss");
             lastModified.setText(simpleDateFormat.format(new Date(file.getLastModified())));

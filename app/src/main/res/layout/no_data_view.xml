@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:paddingLeft="@dimen/application_layout_left_padding"
+    android:paddingRight="@dimen/application_layout_right_padding">
+
+    <TextView android:id="@+id/no_data_msg"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:text="@string/no_data_message"
+        android:gravity="center"
+        android:paddingBottom="@dimen/text_view_padding_bottom"
+        android:textColor="@color/black"/>
+
+    <TextView android:id="@+id/no_data_action_msg"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:text="@string/no_data_next_action"
+        android:gravity="center"
+        android:paddingTop="@dimen/text_view_padding_top"
+        android:paddingBottom="@dimen/text_view_padding_bottom"
+        android:textColor="@color/black"/>
+
+    <com.dd.morphingbutton.MorphingButton
+        android:id="@+id/add_new_device_btn"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceSmall"
+        android:text="@string/add_new_device_plot_fragment_btn"
+        android:layout_marginBottom="@dimen/button_bottom_margin"/>
+
+    <TextView android:id="@+id/or_option"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:text="@string/plot_fragment_action_option"
+        android:gravity="center"
+        android:textColor="@color/black"/>
+
+    <com.dd.morphingbutton.MorphingButton
+        android:id="@+id/add_new_sensor_btn"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceSmall"
+        android:text="@string/add_new_sensor_plot_fragment_btn"
+        android:layout_marginTop="@dimen/button_top_margin"/>
+</LinearLayout>

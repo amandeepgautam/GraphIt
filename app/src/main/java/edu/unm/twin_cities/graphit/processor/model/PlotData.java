@@ -1,5 +1,7 @@
 package edu.unm.twin_cities.graphit.processor.model;
 
+import android.util.Pair;
+
 import com.github.mikephil.charting.data.Entry;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -25,13 +27,14 @@ public class PlotData {
     /**
      * The device from which data will be plotted.
      */
-    private Map<String, List<Entry>> data = Maps.newHashMap();
+    private Map<Pair<String, String>, List<Entry>> data = Maps.newHashMap();
 
     List<String> xValues = Lists.newArrayList();
 
-    public PlotData(Map<String, List<Reading>> allDeviceReadings) {
+    public PlotData(Map<Pair<String, String>, List<Reading>> allDeviceReadings) {
+        //Preparing the set of values for x axis due to a limitation from library.
         SortedSet<Long> sortedSet = Sets.newTreeSet();
-        for (Map.Entry<String, List<Reading>> entry : allDeviceReadings.entrySet()) {
+        for (Map.Entry<Pair<String, String>, List<Reading>> entry : allDeviceReadings.entrySet()) {
             List<Reading> readings = entry.getValue();
             for (Reading reading : readings) {
                 long xValue = reading.getTimestamp();  //time stamp of the reading.
@@ -48,8 +51,9 @@ public class PlotData {
             xValues.add(df2.format(date));
         }
 
-        for (Map.Entry<String, List<Reading>> entry : allDeviceReadings.entrySet()) {
-            String deviceId = entry.getKey();
+        // preparing the data structure of it could be plotted.
+        for (Map.Entry<Pair<String, String>, List<Reading>> entry : allDeviceReadings.entrySet()) {
+            Pair<String, String> deviceId = entry.getKey();
             List<Reading> readings = entry.getValue();
             for (Reading reading : readings) {
                 float yValue = reading.getReading();
@@ -62,5 +66,13 @@ public class PlotData {
                 readingEntry.add(new Entry(yValue, sortedIndexMap.get(xValue)));
             }
         }
+    }
+
+    public int getDeviceCount() {
+        return data.size();
+    }
+
+    public boolean isEmpty() {
+        return data.isEmpty();
     }
 }

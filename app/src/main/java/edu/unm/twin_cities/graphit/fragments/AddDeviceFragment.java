@@ -9,37 +9,38 @@ import android.content.IntentFilter;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.ListView;
+import android.widget.EditText;
+import android.widget.ExpandableListView;
 import android.widget.TextView;
 import android.widget.BaseExpandableListAdapter;
 
-import com.google.common.collect.Sets;
+import com.rengwuxian.materialedittext.MaterialEditText;
 
-import edu.unm.twin_cities.graphit.activity.DrawerActivity.Fragments;
-
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 
 import edu.unm.twin_cities.graphit.R;
 import edu.unm.twin_cities.graphit.activity.DrawerActivity;
 import edu.unm.twin_cities.graphit.application.GraphItApplication;
+import edu.unm.twin_cities.graphit.processor.dao.DeviceDao;
+import edu.unm.twin_cities.graphit.processor.model.Device;
+import edu.unm.twin_cities.graphit.service.ServerActionsService;
 import edu.unm.twin_cities.graphit.util.CommonUtils;
-import edu.unm.twin_cities.graphit.util.ConnectionResouceBundle;
-import edu.unm.twin_cities.graphit.util.RemoteConnectionResouceManager;
-import edu.unm.twin_cities.graphit.util.ServerActionUtil;
+import edu.unm.twin_cities.graphit.util.RemoteConnectionResourceManager;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
-public class AddDeviceFragment extends Fragment implements View.OnClickListener {
+public class AddDeviceFragment extends Fragment {
 
     final int REQUEST_ENABLE_BT = 1;
     public static final String PARAM_BLUETOOTH_DEVICE_ADDRESS = "bluetooth_device";
@@ -53,6 +54,11 @@ public class AddDeviceFragment extends Fragment implements View.OnClickListener 
     // Create a BroadcastReceiver for ACTION_FOUND
     final BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
 
+        private int found = 0;  // keeps track of devices which are found and processed,
+        private int processed = 0;     //keeps track of items which are pinged
+        private boolean isDiscoveryRunning = false;
+
+        @Override
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
             // When discovery finds a device
@@ -61,18 +67,15 @@ public class AddDeviceFragment extends Fragment implements View.OnClickListener 
                     // Get the BluetoothDevice object from the Intent
                     Log.i(TAG, "Found a bluetooth device");
                     BluetoothDevice foundBtDevice = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-
-                    checkBoxInListViewAdapter.add(foundBtDevice);
+                    ++found;
+                    checkBoxInListViewAdapter.isCompatibleDevice(foundBtDevice);
                     break;
                 }
                 case BluetoothAdapter.ACTION_DISCOVERY_FINISHED: {
-                    Button refresh_list_btn = (Button) fragmentView.findViewById(R.id.refresh_list_btn);
-                    if (refresh_list_btn.getVisibility() == View.GONE) {
-                        refresh_list_btn.setOnClickListener(AddDeviceFragment.this);
-                        refresh_list_btn.setVisibility(View.VISIBLE);
+                    isDiscoveryRunning = false;
+                    if(found == processed) {
+                        afterAvailableDevicesUpdatedAction();
                     }
-                    refresh_list_btn.setEnabled(true);
-                    parentActivity.setTitle(R.string.add_device_fragment_available_title);
                     Log.i(TAG, "Finished device discovery");
                     break;
                 }
@@ -88,22 +91,52 @@ public class AddDeviceFragment extends Fragment implements View.OnClickListener 
                     break;
                 }
                 case BluetoothAdapter.ACTION_DISCOVERY_STARTED: {
-                    Button refresh_list_btn = (Button) fragmentView.findViewById(R.id.refresh_list_btn);
+                    isDiscoveryRunning = true;
+                    AddDeviceFragment.this.setRefreshActionButtonState(true);
                     parentActivity.setTitle(R.string.add_device_fragment_scanning_title);
-                    refresh_list_btn.setEnabled(false);
                     Log.i(TAG, "Starting device discovery");
+                    break;
+                }
+                case ServerActionsService.ACTION_PING: {
+                    boolean pingResponse = intent.getBooleanExtra(ServerActionsService.PARAM_IS_PING_SUCCESSFUL, false);
+                    BluetoothDevice bluetoothDevice = intent.getParcelableExtra(ServerActionsService.PARAM_BLUETOOTH_DEVICE);
+
+                    if (bluetoothDevice == null) {
+                        throw new IllegalStateException("Bluetooth device should be passed.");
+                    }
+
+                    boolean isPresent = checkBoxInListViewAdapter.isDevicePresent(bluetoothDevice);
+                    if (pingResponse && !isPresent) {
+                        checkBoxInListViewAdapter.addDevice(bluetoothDevice);
+                    } else if(!pingResponse && isPresent) {
+                        checkBoxInListViewAdapter.removeDevice(bluetoothDevice);
+                    }
+
+                    ++processed;
+                    if(!isDiscoveryRunning && found == processed) {
+                        afterAvailableDevicesUpdatedAction();
+                    }
+
                     break;
                 }
                 default:
                     throw new IllegalArgumentException("Action was not expected.");
             }
         }
+
+        public void afterAvailableDevicesUpdatedAction() {
+            AddDeviceFragment.this.setRefreshActionButtonState(false);
+            parentActivity.setTitle(R.string.add_device_fragment_available_title);
+        }
     };
+
+    private Menu optionsMenu;
     private View fragmentView;
-    private RemoteConnectionResouceManager connectionManager;
+    private RemoteConnectionResourceManager connectionManager;
+    private ExpandableListView listView;
 
     public AddDeviceFragment() {
-        // Required empty public constructor
+        setArguments(new Bundle());
     }
 
     @Override
@@ -114,18 +147,20 @@ public class AddDeviceFragment extends Fragment implements View.OnClickListener 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
+        setHasOptionsMenu(true);
         // Inflate the layout for this fragment
         fragmentView = inflater.inflate(R.layout.fragment_add_device, container, false);
 
         parentActivity = (DrawerActivity) getActivity();
         parentActivity.setTitle(R.string.add_device_fragment_scanning_title);
 
-        GraphItApplication application = ((GraphItApplication)parentActivity.getApplicationContext());
+
+        GraphItApplication application = ((GraphItApplication) parentActivity.getApplicationContext());
         connectionManager = application.getConnectionManager();
 
-        ListView listView = (ListView) fragmentView.findViewById(R.id.new_discovered_device_list);
+        listView = (ExpandableListView) fragmentView.findViewById(R.id.new_discovered_device_list);
 
-        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+/*        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View item,
                                     int position, long id) {
@@ -148,58 +183,123 @@ public class AddDeviceFragment extends Fragment implements View.OnClickListener 
                     Log.e(TAG, "We go an exception", e);
                 }
             }
-        });
-        checkBoxInListViewAdapter = new CheckBoxInListViewAdapter(parentActivity, R.layout.available_device_info, new ArrayList<BluetoothDevice>());
-        checkBoxInListViewAdapter.setNotifyOnChange(true);
+        });*/
+
+        checkBoxInListViewAdapter = new CheckBoxInListViewAdapter(new ArrayList<BluetoothDevice>(),
+                new HashMap<Integer, String>());
         listView.setAdapter(checkBoxInListViewAdapter);
+        int right = (int) (getResources().getDisplayMetrics().widthPixels - TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 30, getResources().getDisplayMetrics()));
+        if(android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.JELLY_BEAN_MR2) {
+            listView.setIndicatorBounds(right - 40, right);
+        } else {
+            listView.setIndicatorBoundsRelative(right - -40, right);
+        }
+
+        listView.setOnGroupExpandListener(new ExpandableListView.OnGroupExpandListener() {
+            int previousGroup = -1;
+
+            @Override
+            public void onGroupExpand(int groupPosition) {
+                if (groupPosition != previousGroup)
+                    listView.collapseGroup(previousGroup);
+                previousGroup = groupPosition;
+            }
+        });
+
+        //checkBoxInListViewAdapter = new CheckBoxInListViewAdapter(parentActivity, R.layout.available_device_info, new ArrayList<BluetoothDevice>());
+        //checkBoxInListViewAdapter.setNotifyOnChange(true);
+        //listView.setAdapter(checkBoxInListViewAdapter);
 
         BluetoothAdapter bluetoothAdapter = CommonUtils.getBluetoothAdapter(parentActivity, REQUEST_ENABLE_BT);
-        scanForAvailableDevice(bluetoothAdapter);
+        //parentActivity.registerReceiver(broadcastReceiver, CommonUtils.getBluetoothIntentFilter());
+        registerIntents();
+        bluetoothAdapter.startDiscovery();
+        //CommonUtils.startBluetoothDiscovery(parentActivity, REQUEST_ENABLE_BT, broadcastReceiver);
+        //scanForAvailableDevice(bluetoothAdapter);
 
         return fragmentView;
     }
 
-    private void scanForAvailableDevice(BluetoothAdapter bluetoothAdapter) {
-        // Register the BroadcastReceiver
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(BluetoothDevice.ACTION_FOUND);
-        filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
-        filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
-        filter.addAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED); //TODO: Change this to appropriate place, which is onclick listener.
-        parentActivity.registerReceiver(broadcastReceiver, filter); // TODO: Don't forget to unregister during onDestroy
-        bluetoothAdapter.startDiscovery();
+    public void setRefreshActionButtonState(final boolean refreshing) {
+        if (optionsMenu != null) {
+            final MenuItem refreshItem = optionsMenu
+                    .findItem(R.id.custom_refresh);
+            if (refreshItem != null) {
+                if (refreshing) {
+                    refreshItem.setActionView(R.layout.progress_bar);
+                } else {
+                    refreshItem.setActionView(null);
+                }
+            }
+        }
     }
 
     @Override
-    public void onDestroy() {
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        this.optionsMenu = menu;
+        inflater.inflate(R.menu.menu_add_device_fragment, menu);
+        super.onCreateOptionsMenu(menu, inflater);
+    }
+
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.custom_refresh:
+                BluetoothAdapter bluetoothAdapter = CommonUtils.getBluetoothAdapter(parentActivity, REQUEST_ENABLE_BT);
+                boolean startDiscovery = bluetoothAdapter.startDiscovery();
+                setRefreshActionButtonState(true);
+                return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void onResume() {
+        // When the activity is called for the first time, intents would be registered twice and
+        // generally this is not an issue.
+        registerIntents();
+        super.onResume();
+    }
+
+    private void registerIntents() {
+        IntentFilter blutoothIntentFilter = CommonUtils.getBluetoothIntentFilter();
+        parentActivity.registerReceiver(broadcastReceiver, blutoothIntentFilter);
+
+        IntentFilter pingIntentFilter = new IntentFilter();
+        pingIntentFilter.addAction(ServerActionsService.ACTION_PING);
+        parentActivity.registerReceiver(broadcastReceiver, pingIntentFilter);
+    }
+
+    private void unregisterIntents() {
         try {
             parentActivity.unregisterReceiver(broadcastReceiver);
         } catch (IllegalArgumentException iae) {
             /* DO NOTHING. As per:
             http://stackoverflow.com/questions/6165070/receiver-not-registered-exception-error */
         }
-        super.onDestroy();
     }
 
     @Override
-    public void onClick(View v) {
-        switch (v.getId()) {
-            case R.id.refresh_list_btn:
-                //execute db queries.
-                BluetoothAdapter bluetoothAdapter = CommonUtils.getBluetoothAdapter(parentActivity, REQUEST_ENABLE_BT);
-                scanForAvailableDevice(bluetoothAdapter);
-                break;
-            default:
-                break;
-        }
+    public void onPause() {
+        unregisterIntents();
+        super.onPause();
     }
 
     @Data
     @AllArgsConstructor(suppressConstructorProperties = true)
-    private static class ViewHolder {
+    private static class GroupViewHolder {
         TextView deviceName;
         TextView deviceAddress;
-        TextView pairedInfo;
+    }
+
+    @Data
+    @AllArgsConstructor(suppressConstructorProperties = true)
+    private static class ItemViewHolder {
+        MaterialEditText deviceNameValue;
+        Button addDevice;
+    }
+
+    private class ViewHolder {
+        TextView text;
     }
 
     /**
@@ -210,33 +310,22 @@ public class AddDeviceFragment extends Fragment implements View.OnClickListener 
         /**
          * List of items.
          */
-        private List<BluetoothDevice> rows;
+        private List<BluetoothDevice> groups;
+        private Map<Integer, String> children;  //Map of index in group to string.
 
-        private Set<BluetoothDevice> ineligibleDevices;
-
-        public ExpandableListAdapter(String[] groups, String[][] children) {
+        public CheckBoxInListViewAdapter(ArrayList<BluetoothDevice> groups, Map<Integer, String> children) {
             this.groups = groups;
             this.children = children;
-            inf = LayoutInflater.from(getActivity());
-        }
-
-
-        public CheckBoxInListViewAdapter(Context context, int resourceId,
-                                         List<BluetoothDevice> rows) {
-            super(context, resourceId, rows);
-            this.rows = rows;
-            ineligibleDevices = Sets.newHashSet();
         }
 
         @Override
         public int getChildrenCount(int groupPosition) {
-            return 0;
+            return 1;
         }
-
 
         @Override
         public Object getGroup(int groupPosition) {
-            return null;
+            return groups.get(groupPosition);
         }
 
         @Override
@@ -245,78 +334,122 @@ public class AddDeviceFragment extends Fragment implements View.OnClickListener 
         }
 
         @Override
-        public View getGroupView(int groupPosition, boolean isExpanded, View convertView, ViewGroup parent){
-            return null;
-        }
-
-        @Override
-        public long getChildId(int groupPosition, int childPosition) {
-
-        }
-
-        @Override
-        public Object getChild(int groupPosition, int childPosition) {
-            return null;
-        }
-
-        @Override
-        public View getChildView(int groupPosition, int childPosition, boolean isLastChild,
-                                 View convertView, ViewGroup parent) {
-            return null;
-        }
-
-        @Override
-        public boolean isChildSelectable(int groupPosition, int childPosition) {
-            return false;
-        }
-
-        @Override
-        public int getGroupCount() {
-            return 0;
-        }
-
-        public long getGroupId(int groupPosition) {
-            return 0;
-        }
-
-        @Override
-        public View getView(final int position, View convertView, ViewGroup parent) {
-            // The child views in each row.
-            ViewHolder viewHolder;
-            TextView deviceNameTextView;
-            TextView deviceAddressTextView;
-            TextView pairedInfoTextView;
+        public View getGroupView(int groupPosition, boolean isExpanded, View convertView, ViewGroup parent) {
+            GroupViewHolder groupViewHolder;
+            final TextView deviceNameTextView;
+            final TextView deviceAddressTextView;
 
             // Creates a new row view.
             if (convertView == null) {
                 LayoutInflater layoutInflater = (LayoutInflater) parentActivity.getSystemService(
                         Context.LAYOUT_INFLATER_SERVICE);
-                convertView = layoutInflater.inflate(R.layout.available_device_info, parent, false);
+                convertView = layoutInflater.inflate(R.layout.list_group, parent, false);
 
                 //Find the child views.
                 deviceNameTextView = (TextView) convertView.findViewById(R.id.name_available_device);
                 deviceAddressTextView = (TextView) convertView.findViewById(R.id.address_available_device);
-                pairedInfoTextView = (TextView) convertView.findViewById(R.id.paired_info);
 
-                viewHolder = new ViewHolder(deviceNameTextView, deviceAddressTextView, pairedInfoTextView);
+                groupViewHolder = new GroupViewHolder(deviceNameTextView, deviceAddressTextView);
                 // Tag the row with it's child view for future use.
-                convertView.setTag(viewHolder);
+                convertView.setTag(groupViewHolder);
 
             } else { // reuse the existing row. Hence optimization by tagging the object.
-                viewHolder = (ViewHolder) convertView.getTag();
-                deviceNameTextView = viewHolder.getDeviceName();
-                deviceAddressTextView = viewHolder.getDeviceAddress();
-                pairedInfoTextView = viewHolder.getPairedInfo();
+                groupViewHolder = (GroupViewHolder) convertView.getTag();
+                deviceNameTextView = groupViewHolder.getDeviceName();
+                deviceAddressTextView = groupViewHolder.getDeviceAddress();
             }
 
             // Retrieve the appropriate  item to display from data source.
-            BluetoothDevice bluetoothDevice = rows.get(position);
+            BluetoothDevice bluetoothDevice = groups.get(groupPosition);
 
             // Get data for display.
             deviceNameTextView.setText(bluetoothDevice.getName());
-            deviceAddressTextView.setText(bluetoothDevice.getAddress());
-            pairedInfoTextView.setText(getBondState(bluetoothDevice));
+            String deviceAddressHelpText = getString(R.string.device_address_help_text);
+            deviceAddressTextView.setText(deviceAddressHelpText + bluetoothDevice.getAddress());
             return convertView;
+        }
+
+        @Override
+        public long getChildId(int groupPosition, int childPosition) {
+            return childPosition;
+        }
+
+        @Override
+        public Object getChild(int groupPosition, int childPosition) {
+            return children.get(groupPosition);
+        }
+
+        @Override
+        public View getChildView(final int groupPosition, final int childPosition,final boolean isLastChild,
+                                 View convertView, ViewGroup parent) {
+            ItemViewHolder holder;
+            final MaterialEditText deviceNameEditTextView;
+            final Button saveInfoButton;
+
+            if (convertView == null) {
+                LayoutInflater layoutInflater = (LayoutInflater) parentActivity.getSystemService(
+                        Context.LAYOUT_INFLATER_SERVICE);
+                convertView = layoutInflater.inflate(R.layout.list_item, parent, false);
+                //Find the child views.
+                deviceNameEditTextView = (MaterialEditText) convertView.findViewById(R.id.device_name_text);
+                saveInfoButton = (Button) convertView.findViewById(R.id.save_device_info_button);
+
+                holder = new ItemViewHolder(deviceNameEditTextView, saveInfoButton);
+
+                convertView.setTag(holder);
+            } else {
+                holder = (ItemViewHolder) convertView.getTag();
+                deviceNameEditTextView = holder.getDeviceNameValue();
+                saveInfoButton = holder.getAddDevice();
+            }
+
+            // Retrieve the appropriate  item to display from data source.
+            final String childName = (String) getChild(groupPosition, childPosition);
+            deviceNameEditTextView.setText(childName);
+
+            saveInfoButton.setOnClickListener(new View.OnClickListener() {
+                public void onClick(View v) {
+                    BluetoothDevice bluetoothDevice = (BluetoothDevice) getGroup(groupPosition);
+                    String deviceId = bluetoothDevice.getAddress();
+
+                    String deviceLabel = deviceNameEditTextView.getText().toString();
+                    if (deviceLabel == null || deviceLabel.isEmpty()) {
+                        deviceLabel = deviceNameEditTextView.getHint().toString();
+                    }
+
+                    Device device = new Device(deviceId, deviceLabel);
+                    DeviceDao deviceDao = new DeviceDao(parentActivity);
+                    deviceDao.insert(device);
+
+                    listView.collapseGroup(groupPosition);
+                }
+            });
+            return convertView;
+        }
+
+        @Override
+        public boolean isChildSelectable(int groupPosition, int childPosition) {
+            return true;
+        }
+
+        @Override
+        public int getGroupCount() {
+            return groups.size();
+        }
+
+        public long getGroupId(int groupPosition) {
+            return groupPosition;
+        }
+
+        public boolean isDevicePresent(BluetoothDevice bluetoothDevice) {
+            // Devices would be very less in number, scan through the list is better than
+            // maintaining a data structure for the purpose.
+            for (BluetoothDevice elem : groups) {
+                if (bluetoothDevice.getAddress().equals(elem.getAddress())) {
+                    return true;
+                }
+            }
+            return false;
         }
 
         /**
@@ -324,35 +457,21 @@ public class AddDeviceFragment extends Fragment implements View.OnClickListener 
          * added to the list of devices.
          * @param bluetoothDevice
          */
-        @Override
-        public void add(BluetoothDevice bluetoothDevice) {
-            boolean existing  = false;
-            boolean toAdd = false;
-            // Devices would be very less in number, scan through the list is better than
-            // maintaining a data structure for the purpose.
-            if (!ineligibleDevices.contains(bluetoothDevice)) {
-                for (BluetoothDevice elem : rows) {
-                    if (bluetoothDevice.getAddress().equals(elem.getAddress())) {
-                        existing = true;
-                        break;
-                    }
-                }
-                if (!existing) {
-                    try {
-                        ConnectionResouceBundle connectionResouceBundle = connectionManager
-                                .getConnectionResource(bluetoothDevice, parentActivity.getApplicationContext());
-                        ServerActionUtil serverActionUtil = new ServerActionUtil(connectionResouceBundle);
-                        if (serverActionUtil.ping()) {
-                            toAdd = true;
-                        }
-                    } catch (IOException ioe) {
-                        /* The device is not THE ONE we are looking for.**/
-                    }
-                }
-            }
-            if (!existing && toAdd) {
-                super.add(bluetoothDevice);
-            }
+        public void isCompatibleDevice(BluetoothDevice bluetoothDevice) {
+            Intent intent = new Intent(parentActivity, ServerActionsService.class);
+            intent.setAction(ServerActionsService.ACTION_PING);
+            intent.putExtra(ServerActionsService.PARAM_BLUETOOTH_DEVICE, bluetoothDevice);
+            parentActivity.startService(intent);
+        }
+
+        public void addDevice(BluetoothDevice bluetoothDevice) {
+            groups.add(bluetoothDevice);
+            children.put(groups.size() - 1, bluetoothDevice.getName());
+            this.notifyDataSetChanged();
+        }
+
+        public void removeDevice(BluetoothDevice bluetoothDevice) {
+            return ;
         }
     }
 

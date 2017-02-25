@@ -27,4 +27,16 @@ public interface Measurement<X, Y> {
      * @param measurement a measured tuple
      */
     void addMeasurement(Pair<X, Y> measurement);
+
+    /**
+     * Gets the sensor id for this reading's sensor.
+     * @return
+     */
+    String getSensorId();
+
+    /**
+     * Get the device associated with this measurement.
+     * @return
+     */
+    String getDeviceId();
 }

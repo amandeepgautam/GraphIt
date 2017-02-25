@@ -50,10 +50,9 @@ public class DeviceDao extends AbstractDao {
         List<Device> devices = Lists.newArrayList();
         while (cursor.moveToNext()) {
             String deviceId = cursor.getString(cursor.getColumnIndex(DatabaseHelper.Fields.DEVICE_ID.getFieldName()));
-            String sensorId = cursor.getString(cursor.getColumnIndex(DatabaseHelper.Fields.DEVICE_LABEL.getFieldName()));
-            devices.add(new Device(deviceId, sensorId));
+            String deviceLabel = cursor.getString(cursor.getColumnIndex(DatabaseHelper.Fields.DEVICE_LABEL.getFieldName()));
+            devices.add(new Device(deviceId, deviceLabel));
         }
         return devices;
     }
-
 }

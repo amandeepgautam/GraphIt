@@ -1,20 +1,19 @@
 <android.support.v4.widget.DrawerLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/drawer_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
     <LinearLayout
+        android:id="@+id/content_frame_with_toolbar"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:background="@color/colorSecondary">
 
-        <android.support.v7.widget.Toolbar
-            android:id="@+id/my_awesome_toolbar"
-            android:layout_height="wrap_content"
-            android:layout_width="match_parent"
-            android:minHeight="?attr/actionBarSize"
-            android:background="?attr/colorPrimary" />
+        <include android:id="@+id/merged_toolbar"
+            layout="@layout/toolbar" />
 
         <!-- The main content view -->
         <FrameLayout
@@ -22,11 +21,22 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent">
         </FrameLayout>
-
     </LinearLayout>
 
+    <!-- The navigation drawer that comes from the left -->
+    <!-- Note that `android:layout_gravity` needs to be set to 'start' -->
+    <android.support.design.widget.NavigationView
+        android:id="@+id/nvView"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_gravity="start"
+        android:background="@color/colorSecondary"
+        app:menu="@menu/drawer_view"
+        app:itemTextColor="@color/black"
+        app:headerLayout="@layout/nav_header"/>
+
     <!-- The navigation drawer. Try using android.support.design.widget.NavigationView -->
-    <ListView android:id="@+id/left_drawer"
+    <!--<ListView android:id="@+id/left_drawer"
         android:layout_width="320dp"
         android:layout_height="match_parent"
         android:layout_gravity="start"
@@ -34,5 +44,5 @@
         android:divider="@android:color/transparent"
         android:dividerHeight="0dp"
         android:background="#111"
-        android:entries="@array/nav_actions"/>
+        android:entries="@array/nav_actions"/> -->
 </android.support.v4.widget.DrawerLayout>

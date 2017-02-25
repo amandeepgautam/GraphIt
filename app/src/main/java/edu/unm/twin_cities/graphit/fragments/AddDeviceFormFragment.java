@@ -51,10 +51,10 @@ public class AddDeviceFormFragment extends Fragment implements View.OnClickListe
         switch (v.getId()) {
             case R.id.save_device_and_add_sensor_info_button:
                 //execute db queries.
-                ((DrawerActivity)getActivity()).loadFragment(DrawerActivity.Fragments.ADD_SENSOR, null);
+                ((DrawerActivity)getActivity()).loadFragment(DrawerActivity.Fragments.ADD_SENSOR, null, false);
                 break;
             case R.id.save_device_info_button:
-                ((DrawerActivity)getActivity()).loadFragment(DrawerActivity.Fragments.PLOT_FRAGMENT, null);
+                ((DrawerActivity)getActivity()).loadFragment(DrawerActivity.Fragments.PLOT_FRAGMENT, null, false);
                 break;
             default:
                 break;

@@ -1,27 +1,37 @@
 package edu.unm.twin_cities.graphit.processor;
 
+import android.content.ContentValues;
 import android.content.Context;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
+import java.util.List;
+
+import edu.unm.twin_cities.graphit.processor.dao.SensorTypeDao;
+import edu.unm.twin_cities.graphit.processor.model.SensorType;
 import edu.unm.twin_cities.graphit.processor.model.SensorType.SensorTypeID;
+import lombok.Data;
 import lombok.Getter;
 
 /**
  * Created by aman on 10/8/15.
  */
+@Data
 public class DatabaseHelper extends SQLiteOpenHelper {
 
     private final String TAG = DatabaseHelper.class.getSimpleName();
 
     private static DatabaseHelper databaseHelperInstance;
     private static final String DATABASE_NAME = "ExperimentData";
-    private static final int DATABASE_VERSION = 4;
+    private static final int DATABASE_VERSION = 14;
+
+    private Context context = null;
 
     private DatabaseHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
+        this.context = context;
     }
 
     public static DatabaseHelper getInstance(Context context) {
@@ -40,18 +50,20 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         final String CREATE_TABLE_SENSOR_TYPE = "CREATE TABLE " + Table.SENSOR_TYPE.getTableName() + "("
                 + Fields.SENSOR_TYPE_ID.getFieldName() + " TEXT PRIMARY KEY, "
                 + Fields.SENSOR_TYPE_LABEL.getFieldName() + " TEXT, "
-                + Fields.SENSOR_TYPE_DESCRIPTION.getFieldName() + " TEXT" + ")";
+                + Fields.SENSOR_TYPE_DESCRIPTION.getFieldName() + " TEXT,"
+                + Fields.MEASUREMENT_UNIT.getFieldName() + " TEXT NOT NULL)";
 
         final String CREATE_TABLE_DEVICE = "CREATE TABLE " + Table.DEVICE.getTableName() + "("
                 + Fields.DEVICE_ID.getFieldName() + " TEXT  PRIMARY KEY, "
                 + Fields.DEVICE_LABEL.getFieldName() + " TEXT)";
 
         final String CREATE_TABLE_SENSOR = "CREATE TABLE " + Table.SENSOR.getTableName() + "("
-                + Fields.DEVICE_ID.getFieldName() + " TEXT REFERENCES " + Table.DEVICE.getTableName() + "("
+                + Fields.DEVICE_ID.getFieldName() + " TEXT NOT NULL REFERENCES " + Table.DEVICE.getTableName() + "("
                 + Fields.DEVICE_ID.getFieldName() + "), "
                 + Fields.SENSOR_ID.getFieldName() + " TEXT, "
                 + Fields.SENSOR_LABEL.getFieldName() + " TEXT NOT NULL, "
                 + Fields.SENSOR_DESCRIPTION.getFieldName() + " TEXT, "
+                + Fields.SENSOR_DATA_FILE_PATH.getFieldName() + " TEXT NOT NULL, "
                 + Fields.SENSOR_TYPE_ID.getFieldName() + " TEXT NOT NULL REFERENCES " + Table.SENSOR_TYPE.getTableName() + "("
                 + Fields.SENSOR_TYPE_ID.getFieldName() + "), "
                 + Fields.CREATED_AT.getFieldName() + " INTEGER NOT NULL, "
@@ -59,12 +71,15 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 + Fields.SENSOR_ID.getFieldName() + ") )";
 
         final String CREATE_TABLE_READING = "CREATE TABLE " + Table.READING.getTableName() + "("
+                + Fields.DEVICE_ID.getFieldName() + " TEXT NOT NULL REFERENCES " + Table.DEVICE.getTableName() + "("
+                + Fields.DEVICE_ID.getFieldName() + "), "
                 + Fields.SENSOR_ID.getFieldName() + " TEXT NOT NULL REFERENCES " + Table.SENSOR.getTableName() + "("
                 + Fields.SENSOR_ID.getFieldName() + "), "
                 + Fields.READING.getFieldName() + " REAL NOT NULL, "
                 + Fields.MEASUREMENT_UNIT.getFieldName() + " TEXT, "
                 + Fields.TIMESTAMP.getFieldName() + " INTEGER NOT NULL, "
-                + "PRIMARY KEY (" + Fields.SENSOR_ID.getFieldName() + ", "
+                + "PRIMARY KEY (" + Fields.DEVICE_ID.getFieldName() + ","
+                + Fields.SENSOR_ID.getFieldName() + ", "
                 + Fields.TIMESTAMP.getFieldName() + ") )";
 
         final String CREATE_TABLE_DEVICE_SENSOR_MAP = "CREATE TABLE " + Table.DEVICE_SENSOR.getTableName() + "("
@@ -76,12 +91,24 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 + "PRIMARY KEY (" + Fields.DEVICE_ID.getFieldName() + ", "
                 + Fields.SENSOR_ID.getFieldName() + ") )";
 
+        final String CREATE_TABLE_USER_PREFERENCE = "CREATE TABLE " + Table.USER_PREF.getTableName() + "("
+                + Fields.USER_PREF_KEY.getFieldName() + " TEXT PRIMARY KEY, "
+                + Fields.USER_PREF_VALUE.getFieldName() + " TEXT NOT NULL" + ")";
+
         try {
             db.execSQL(CREATE_TABLE_SENSOR_TYPE);
             Log.i(TAG, "Created table: " + Table.SENSOR_TYPE.getTableName());
 
-            db.execSQL("INSERT INTO " + Table.SENSOR_TYPE.getTableName() + "(" + Fields.SENSOR_TYPE_ID.getFieldName() + ", " + Fields.SENSOR_TYPE_DESCRIPTION.getFieldName() +
-                    ") VALUES ('" + SensorTypeID.DEFAULT.name() + "', 'Device type for devices with no specified device types')");
+            //Provide bootstrap values.
+
+            //TODO: revist behaviour of functions
+            SensorTypeDao sensorTypeDao = new SensorTypeDao(context);
+            List<ContentValues> sensorTypes = sensorTypeDao.initializeSensorType();
+            for (ContentValues sensorType : sensorTypes) {
+                db.insertWithOnConflict(Table.SENSOR_TYPE.getTableName(), null,
+                        sensorType, SQLiteDatabase.CONFLICT_IGNORE);
+            }
+
             Log.i(TAG, "Inserted a record for default device type, for the " +
                     "case where sensors does not have any predefined one form User.");
 
@@ -96,6 +123,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
             db.execSQL(CREATE_TABLE_DEVICE_SENSOR_MAP);
             Log.i(TAG, "Created table: " + Table.DEVICE_SENSOR.getTableName());
+
+            db.execSQL(CREATE_TABLE_USER_PREFERENCE);
+            Log.i(TAG, "Created table: " + Table.USER_PREF.getTableName());
         } catch (SQLException sqle) {
             Log.e(TAG, "Error in database creation", sqle);
             //TODO: Do something with the exception.
@@ -114,11 +144,17 @@ public class DatabaseHelper extends SQLiteOpenHelper {
      * Enum containing all the table names for the application.
      */
     public enum Table {
+        /** Sensor instance.**/
         SENSOR("sensor"),
+        /** Store for type of sensor which could be available.**/
         SENSOR_TYPE("sensor_type"),
+        /** A store the readings which have been collected. **/
         READING("reading"),
+        /** Store for devices that host the sensors.**/
         DEVICE("device"),
-        DEVICE_SENSOR("device_sensor");
+        DEVICE_SENSOR("device_sensor"),
+        /** A key value table for storing user based preference.**/
+        USER_PREF("user_preference");
 
         @Getter
         private final String tableName;
@@ -139,12 +175,15 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         SENSOR_LABEL("sensor_label"),
         SENSOR_DESCRIPTION("sensor_description"),
         CREATED_AT("created_at"),
+        SENSOR_DATA_FILE_PATH("sensor_data_file_path"),
         READING("reading"),
         TIMESTAMP("timestamp"),
         MEASUREMENT_UNIT("measurement_unit"),
         DEVICE_ID("device_id"),
         DEVICE_LABEL("device_label"),
-        SENSOR_FILE_LOC("sensor_file_location");
+        SENSOR_FILE_LOC("sensor_file_location"),
+        USER_PREF_KEY("key"),
+        USER_PREF_VALUE("value");
 
         @Getter
         private final String fieldName;

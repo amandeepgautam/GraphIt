@@ -1,0 +1,19 @@
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="edu.unm.twin_cities.graphit.fragments.UpdateFragment">
+    <ListView
+        android:id="@+id/update_devices_list"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" >
+    </ListView>
+
+    <com.dd.morphingbutton.MorphingButton
+        android:id="@+id/update_selected_devices"
+        android:layout_height="wrap_content"
+        android:layout_width="match_parent"
+        android:layout_gravity="bottom"
+        android:text="@string/update_selected_devices">
+    </com.dd.morphingbutton.MorphingButton>
+</FrameLayout>

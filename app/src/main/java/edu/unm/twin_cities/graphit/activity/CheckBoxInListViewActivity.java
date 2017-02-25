@@ -40,12 +40,6 @@ public abstract class CheckBoxInListViewActivity extends AppCompatActivity {
          */
         private List<BluetoothDevice> rows;
 
-        public CheckBoxInListViewAdapter(Context context, int resourceId,
-                                         List<BluetoothDevice> rows) {
-            super(context, resourceId, rows);
-            this.rows = rows;
-        }
-
         @Override
         public View getView(final int position, View convertView, ViewGroup parent) {
             // The child views in each row.
@@ -80,6 +74,12 @@ public abstract class CheckBoxInListViewActivity extends AppCompatActivity {
             deviceNameTextView.setText(bluetoothDevice.getName());
             deviceAddressTextView.setText(bluetoothDevice.getAddress());
             return convertView;
+        }
+
+        public CheckBoxInListViewAdapter(Context context, int resourceId,
+                                         List<BluetoothDevice> rows) {
+            super(context, resourceId, rows);
+            this.rows = rows;
         }
     }
 }
